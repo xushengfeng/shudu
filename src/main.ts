@@ -337,7 +337,9 @@ const boardEl = view().addInto(appEl);
 const toolsEl = view().addInto(appEl);
 
 const toolsEl2 = view().addInto(toolsEl);
-const timeLineEl = view().addInto(toolsEl);
+const timeLineEl = view()
+	.addInto(toolsEl)
+	.style({ maxWidth: "120px", maxHeight: "60px", overflow: "scroll" });
 const inputEl = view().addInto(toolsEl);
 
 const text = view().addInto(toolsEl2);
