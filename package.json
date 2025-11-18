@@ -1,19 +1,19 @@
 {
-  "name": "shudu",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "typescript": "~5.9.3",
-    "vite": "^7.2.2"
-  },
-  "dependencies": {
-    "dkh-ui": "^0.14.2",
-    "sudoku-core": "^3.0.3"
-  }
+    "name": "shudu",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "typescript": "~5.9.3",
+        "vite": "^7.2.2"
+    },
+    "dependencies": {
+        "dkh-ui": "^0.14.2",
+        "sudoku-core": "^3.0.3"
+    }
 }
