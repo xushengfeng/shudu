@@ -1,5 +1,5 @@
-import { analyze, generate, hint, solve } from "sudoku-core";
-import { button, initDKH, view, type ElType } from "dkh-ui";
+import { analyze, generate, hint, solve, type Difficulty } from "sudoku-core";
+import { button, initDKH, select, view, type ElType } from "dkh-ui";
 
 type BoardItem =
 	| { type: "number"; value: number }
@@ -290,11 +290,11 @@ function checkData(values: Array<number | null>) {
 	}
 }
 
-function initGame() {
+function initGame(d: Difficulty) {
 	nowData = [];
 	focusIndex = -1;
 
-	const ss = generate("easy");
+	const ss = generate(d);
 	console.log(ss);
 
 	const a = solve(ss);
@@ -344,9 +344,18 @@ const text = view().addInto(toolsEl2);
 
 button("新建")
 	.on("click", () => {
-		initGame();
+		initGame(selectX.gv);
 	})
 	.addInto(toolsEl2);
+const selectX = select<Difficulty>([
+	{ value: "easy", name: "简单" },
+	{ value: "medium", name: "中等" },
+	{ value: "hard", name: "困难" },
+	{ value: "expert", name: "专家" },
+	{ value: "master", name: "大师" },
+]);
+
+selectX.addInto(toolsEl2);
 
 button("检查")
 	.on("click", () => {
@@ -360,7 +369,7 @@ button("检查")
 
 initDKH({ pureStyle: true });
 
-initGame();
+initGame("easy");
 
 document.body.onkeyup = (e) => {
 	if (e.key >= "1" && e.key <= "9") {
