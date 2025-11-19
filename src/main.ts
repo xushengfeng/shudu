@@ -5,6 +5,11 @@ type BoardItem =
 	| { type: "number"; value: number }
 	| { type: "note"; value: number | null; notes: number[] };
 
+type PosiT = {
+	type: "x" | "y" | "b" | "c";
+	p: number;
+};
+
 const zeroToNine = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 const canNumber = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -304,7 +309,16 @@ function setData(data: BoardItem[]) {
 	}
 }
 
-function fastCheckData(values: Array<BoardItem>) {
+function fastCheckData(values: Array<BoardItem>):
+	| {
+			type: "normal" | "success";
+	  }
+	| {
+			type: "error";
+			errorType: "less" | "empty";
+			posi: PosiT;
+			n: number[];
+	  } {
 	const every = values.every((v) => typeof v.value === "number");
 	for (const [i, v] of values.entries()) {
 		if (v.value === null) continue;
@@ -312,16 +326,39 @@ function fastCheckData(values: Array<BoardItem>) {
 			values.map((vv) => vv.value),
 			i,
 		);
-		if (new Set(n.x).size !== n.x.length) return "error";
-		if (new Set(n.y).size !== n.y.length) return "error";
-		if (new Set(n.b).size !== n.b.length) return "error";
+		if (new Set(n.x).size !== n.x.length)
+			return {
+				type: "error",
+				errorType: "less",
+				n: [],
+				posi: { type: "x", p: Math.floor(i / 9) },
+			};
+		if (new Set(n.y).size !== n.y.length)
+			return {
+				type: "error",
+				errorType: "less",
+				n: [],
+				posi: { type: "y", p: i % 9 },
+			};
+		if (new Set(n.b).size !== n.b.length)
+			return {
+				type: "error",
+				errorType: "less",
+				n: [],
+				posi: { type: "b", p: index2BlockIndex(i) },
+			};
 	}
 	if (every) {
-		return "success";
+		return { type: "success" };
 	} else {
-		for (const v of values) {
+		for (const [i, v] of values.entries()) {
 			if (v.type === "note" && v.value === null && v.notes.length === 0) {
-				return "error";
+				return {
+					type: "error",
+					errorType: "empty",
+					n: [],
+					posi: { type: "c", p: i },
+				};
 			}
 		}
 		for (const bindex of zeroToNine) {
@@ -336,11 +373,16 @@ function fastCheckData(values: Array<BoardItem>) {
 					.filter((v): v is number => typeof v === "number"),
 			);
 			if (ns.size < 9) {
-				return "error";
+				return {
+					type: "error",
+					errorType: "less",
+					n: canNumber.filter((n) => !ns.has(n)),
+					posi: { type: "b", p: bindex },
+				};
 			}
 		}
 		for (const x of zeroToNine) {
-			const xIndexes = zeroToNine.map((i) => x + i * 9);
+			const xIndexes = zeroToNine.map((i) => x * 9 + i);
 			const ns = new Set(
 				xIndexes
 					.flatMap((i) =>
@@ -351,11 +393,16 @@ function fastCheckData(values: Array<BoardItem>) {
 					.filter((v): v is number => typeof v === "number"),
 			);
 			if (ns.size < 9) {
-				return "error";
+				return {
+					type: "error",
+					errorType: "less",
+					n: canNumber.filter((n) => !ns.has(n)),
+					posi: { type: "x", p: x },
+				};
 			}
 		}
 		for (const y of zeroToNine) {
-			const yIndexes = zeroToNine.map((i) => y * 9 + i);
+			const yIndexes = zeroToNine.map((i) => y + i * 9);
 			const ns = new Set(
 				yIndexes
 					.flatMap((i) =>
@@ -366,20 +413,42 @@ function fastCheckData(values: Array<BoardItem>) {
 					.filter((v): v is number => typeof v === "number"),
 			);
 			if (ns.size < 9) {
-				return "error";
+				return {
+					type: "error",
+					errorType: "less",
+					n: canNumber.filter((n) => !ns.has(n)),
+					posi: { type: "y", p: y },
+				};
 			}
 		}
-		return "normal";
+		return { type: "normal" };
 	}
 }
 
 function checkDataEl(values: Array<BoardItem>) {
 	const c = fastCheckData(values);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
-	if (c === "success") {
+	errorTextEl.clear();
+	if (c.type === "success") {
 		boardEl.el.classList.add(boardSuccessClass);
-	} else if (c === "error") {
+	} else if (c.type === "error") {
 		boardEl.el.classList.add(boardErrorClass);
+		view()
+			.add(
+				c.posi.type === "x"
+					? `${c.posi.p + 1}行`
+					: c.posi.type === "y"
+						? `${c.posi.p + 1}列`
+						: c.posi.type === "b"
+							? `${c.posi.p + 1}宫`
+							: `${c.posi.p % 9},${Math.floor(c.posi.p / 9)}格`,
+			)
+			.addInto(errorTextEl);
+		if (c.errorType === "empty") {
+			errorTextEl.add("空的候选");
+		} else if (c.errorType === "less") {
+			errorTextEl.add(`缺少数字: ${c.n.join(", ")}`);
+		}
 	}
 
 	highLightB.clear();
@@ -522,6 +591,7 @@ const toolsEl2 = view("x", "wrap").style({ gap: "16px" }).addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
 	.style({ width: "100%", maxHeight: "60px", overflow: "scroll" });
+const errorTextEl = view().addInto(toolsEl);
 
 const toolsEl3 = view("x").style({ gap: "4px" }).addInto(toolsEl);
 
