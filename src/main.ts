@@ -449,7 +449,7 @@ function checkDataEl(values: Array<BoardItem>) {
 						? `${c.posi.p + 1}列`
 						: c.posi.type === "b"
 							? `${c.posi.p + 1}宫`
-							: `${c.posi.p % 9},${Math.floor(c.posi.p / 9)}格`,
+							: `${(c.posi.p % 9) + 1},${Math.floor(c.posi.p / 9) + 1}格`,
 			)
 			.addInto(errorTextEl);
 		if (c.errorType === "empty") {
