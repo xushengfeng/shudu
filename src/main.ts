@@ -415,8 +415,8 @@ const timeLine: {
 } = { data: {}, pointer: "0", link: {} };
 
 const appEl = view("x", "wrap").addInto().style({
-	width: "100vw",
-	height: "100vh",
+	width: "100svw",
+	height: "100svh",
 	alignItems: "center",
 	justifyContent: "center",
 	alignContent: "center",
