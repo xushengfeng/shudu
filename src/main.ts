@@ -418,9 +418,6 @@ function checkDataEl(values: Array<BoardItem>) {
 }
 
 function initGame(d: Difficulty) {
-	nowData = [];
-	focusIndex = -1;
-
 	const ss = generate(d);
 	console.log(ss);
 
@@ -433,6 +430,13 @@ function initGame(d: Difficulty) {
 	const xx = hint(ss);
 	console.log(xx);
 
+	initBoard(ss);
+}
+
+function initBoard(ss: Array<null | number>) {
+	nowData = [];
+	focusIndex = -1;
+
 	nowData = creatBoardItemFromValue(ss);
 
 	timeLine.data = { 0: { dataList: nowData, focusIndex: focusIndex } };
@@ -440,6 +444,7 @@ function initGame(d: Difficulty) {
 	timeLine.pointer = "0";
 
 	setBoard(nowData);
+	setData(nowData);
 	setFocus(focusIndex);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	checkDataEl(nowData);
@@ -507,7 +512,7 @@ const toolsEl = view("y")
 	.style({ gap: "16px", width: "min(360px, 100vw)", alignItems: "center" })
 	.addInto(appEl);
 
-const toolsEl2 = view("y").style({ gap: "16px" }).addInto(toolsEl);
+const toolsEl2 = view("x", "wrap").style({ gap: "16px" }).addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
 	.style({ width: "100%", maxHeight: "60px", overflow: "scroll" });
@@ -543,6 +548,35 @@ const selectX = select<Difficulty>([
 ]);
 
 selectX.addInto(toolsEl2);
+
+button("导入")
+	.on("click", () => {
+		const p = prompt();
+		if (p?.length !== 81) return;
+		const ss = p
+			.split("")
+			.map((c) => ("1" <= c && c <= "9" ? Number(c) : null));
+		initBoard(ss);
+	})
+	.addInto(toolsEl2);
+button("导出")
+	.on("click", () => {
+		prompt(nowData.map((i) => (i.value === null ? 0 : i.value)).join(""));
+	})
+	.addInto(toolsEl2);
+
+button("空")
+	.on("click", () => {
+		initBoard(new Array(81).fill(null));
+	})
+	.addInto(toolsEl2);
+
+button("当前作为初始")
+	.on("click", () => {
+		const data = nowData.map((i) => i.value);
+		initBoard(data);
+	})
+	.addInto(toolsEl2);
 
 button("检查")
 	.on("click", () => {
