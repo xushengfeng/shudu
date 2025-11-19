@@ -304,6 +304,9 @@ function setData(data: BoardItem[]) {
 			const childElObj = els.get(childId);
 			if (childElObj) {
 				elObj.childrenWarp.add(childElObj.main);
+				if (elObj.childrenWarp.el.children.length > 1) {
+					elObj.childrenWarp.style({ borderLeft: "1px solid" });
+				}
 			}
 		}
 	}
