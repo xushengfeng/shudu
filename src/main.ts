@@ -1,5 +1,5 @@
 import { analyze, generate, hint, solve, type Difficulty } from "sudoku-core";
-import { button, initDKH, select, view, type ElType } from "dkh-ui";
+import { addClass, button, initDKH, select, view, type ElType } from "dkh-ui";
 
 type BoardItem =
 	| { type: "number"; value: number }
@@ -96,25 +96,29 @@ function creatBoardItemFromValue(values: Array<number | null>): BoardItem[] {
 }
 
 function setBoard(board: BoardItem[]) {
-	boardEl.clear().style({
-		display: "grid",
-		gridTemplateColumns: "repeat(3, min-content)",
-		gridTemplateRows: "repeat(3, auto)",
-		gap: "0px",
-	});
+	boardEl
+		.clear()
+		.style({
+			display: "grid",
+			gridTemplateColumns: "repeat(3, min-content)",
+			gridTemplateRows: "repeat(3, auto)",
+			gap: "0px",
+		})
+		.class(mainClassBoard);
 
 	for (const mainIndex of zeroToNine) {
-		const boxEl = view().addInto(boardEl).style({
-			border: "2px solid black",
-			display: "grid",
-			gridTemplateColumns: "repeat(3, 40px)",
-			gridTemplateRows: "repeat(3, 40px)",
-		});
+		const boxEl = view()
+			.addInto(boardEl)
+			.style({
+				display: "grid",
+				gridTemplateColumns: "repeat(3, 40px)",
+				gridTemplateRows: "repeat(3, 40px)",
+			})
+			.class(mainClassBlock);
 		for (const boxIndex of zeroToNine) {
 			const cellEl = view()
 				.addInto(boxEl)
 				.style({
-					border: "1px solid gray",
 					width: "40px",
 					height: "40px",
 					display: "flex",
@@ -122,16 +126,18 @@ function setBoard(board: BoardItem[]) {
 					justifyContent: "center",
 					fontSize: "20px",
 				})
+				.class(mainClassCell)
 				.on("click", () => {
 					setFocus(blockIndex(mainIndex)[boxIndex]);
-				});
+				})
+				.data({ index: blockIndex(mainIndex)[boxIndex].toString() });
 			const boardIndex = blockIndex(mainIndex)[boxIndex];
 			const item = board[boardIndex];
 			if (item.type === "number") {
-				cellEl.add(String(item.value));
+				cellEl.add(String(item.value)).data({ n: item.value.toString() });
 			} else if (item.type === "note") {
 				if (item.value !== null) {
-					cellEl.add(String(item.value));
+					cellEl.add(String(item.value)).data({ n: item.value.toString() });
 				} else {
 					const noteGrid = view()
 						.style({
@@ -142,12 +148,18 @@ function setBoard(board: BoardItem[]) {
 							height: "100%",
 							fontSize: "10px",
 							lineHeight: "10px",
+							textAlign: "center",
+							color: "#666",
 						})
 						.addInto(cellEl);
 					for (const i of canNumber) {
-						noteGrid.add(
-							view().add(item.notes.includes(i) ? String(i) : undefined),
+						const nel = view().add(
+							item.notes.includes(i) ? String(i) : undefined,
 						);
+						if (item.notes.includes(i)) {
+							nel.data({ n: String(i) });
+						}
+						noteGrid.add(nel);
 					}
 				}
 			} else {
@@ -184,9 +196,22 @@ function setFocus(index: number) {
 			})
 			.add(String(i));
 
-		btnEl.on("click", () => {
-			setCellValue(focusIndex, i);
-		});
+		if (inputType === "note") {
+			const d = nowData[focusIndex];
+			if (d.type === "note") {
+				if (d.notes.includes(i)) {
+					btnEl.style({ backgroundColor: "lightblue" });
+				}
+			}
+			btnEl.on("click", () => {
+				setCellValueNote(focusIndex, i);
+				setFocus(focusIndex);
+			});
+		} else {
+			btnEl.on("click", () => {
+				setCellValue(focusIndex, i);
+			});
+		}
 	}
 }
 
@@ -209,10 +234,25 @@ function setCellValue(index: number, value: number) {
 	setBoard(data);
 	setData(data);
 
-	const s = checkData(data.map((i) => i.value));
-	if (s === "error") text.clear().add("有错误");
-	else if (s === "success") text.clear().add("完成！");
-	else text.clear().add("");
+	checkDataEl(data.map((i) => i.value));
+}
+
+function setCellValueNote(index: number, value: number) {
+	const data = structuredClone(nowData);
+	const currentItem = data[index];
+	if (currentItem.type === "number") {
+		return;
+	}
+	if (currentItem.notes.includes(value)) {
+		currentItem.notes = currentItem.notes.filter((i) => i !== value);
+	} else {
+		currentItem.notes.push(value);
+		currentItem.notes.sort((a, b) => a - b);
+	}
+	data[index] = currentItem;
+
+	setBoard(data);
+	setData(data);
 }
 
 function setData(data: BoardItem[]) {
@@ -252,6 +292,7 @@ function setData(data: BoardItem[]) {
 			focusIndex = d.focusIndex;
 			setBoard(nowData);
 			setFocus(focusIndex);
+			checkDataEl(nowData.map((i) => i.value));
 		});
 		return nodeP;
 	}
@@ -290,6 +331,51 @@ function checkData(values: Array<number | null>) {
 	}
 }
 
+function checkDataEl(values: Array<number | null>) {
+	const c = checkData(values);
+	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
+	if (c === "success") {
+		boardEl.el.classList.add(boardSuccessClass);
+	} else if (c === "error") {
+		boardEl.el.classList.add(boardErrorClass);
+	}
+
+	highLightB.clear();
+	const unusedNum = canNumber.flatMap((n) =>
+		values.filter((v) => v === n).length === 9 ? [] : [n],
+	);
+	highLightB.add(
+		view()
+			.add("x")
+			.on("click", () => {
+				// 取消所有高亮
+				for (const cellEl of boardEl.queryAll("[data-n]")) {
+					cellEl.el.classList.remove(celNumHighlightClass);
+				}
+			}),
+	);
+	for (const n of unusedNum) {
+		highLightB.add(
+			view()
+				.style({
+					width: "20px",
+					height: "20px",
+				})
+				.add(String(n))
+				.on("click", () => {
+					// 高亮显示所有n的单元格
+					for (const cellEl of boardEl.queryAll("[data-n]")) {
+						if (cellEl.el.getAttribute("data-n") === String(n)) {
+							cellEl.el.classList.add(celNumHighlightClass);
+						} else {
+							cellEl.el.classList.remove(celNumHighlightClass);
+						}
+					}
+				}),
+		);
+	}
+}
+
 function initGame(d: Difficulty) {
 	nowData = [];
 	focusIndex = -1;
@@ -314,10 +400,13 @@ function initGame(d: Difficulty) {
 
 	setBoard(nowData);
 	setFocus(focusIndex);
+	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
+	checkDataEl(ss);
 }
 
 let nowData: BoardItem[] = [];
 let focusIndex: number = -1;
+let inputType: "normal" | "note" = "normal";
 const timeLine: {
 	data: Record<string, { dataList: BoardItem[]; focusIndex: number }>;
 	link: Record<string, string[]>;
@@ -334,15 +423,38 @@ const appEl = view("x", "wrap").addInto().style({
 
 const boardEl = view().addInto(appEl);
 
+const mainClassBoard = addClass({}, {});
+const mainClassBlock = addClass({ border: "1px solid gray" }, {});
+const mainClassCell = addClass({ border: "1px solid lightgray" }, {});
+
+const celNumHighlightClass = addClass({ backgroundColor: "yellow" }, {});
+
+const boardSuccessClass = addClass({ boxShadow: "0 0 10px green" }, {});
+const boardErrorClass = addClass({ boxShadow: "0 0 10px red" }, {});
+
 const toolsEl = view().addInto(appEl);
 
 const toolsEl2 = view().addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
 	.style({ maxWidth: "120px", maxHeight: "60px", overflow: "scroll" });
-const inputEl = view().addInto(toolsEl);
 
-const text = view().addInto(toolsEl2);
+const toolsEl3 = view().addInto(toolsEl);
+
+button("普通输入")
+	.addInto(toolsEl3)
+	.on("click", () => {
+		inputType = "normal";
+		setFocus(focusIndex);
+	});
+button("草稿编辑")
+	.addInto(toolsEl3)
+	.on("click", () => {
+		inputType = "note";
+		setFocus(focusIndex);
+	});
+
+const inputEl = view().addInto(toolsEl);
 
 button("新建")
 	.on("click", () => {
@@ -367,6 +479,10 @@ button("检查")
 		const a = r.board ?? [];
 		console.log(b.every((v, i) => a[i] === v));
 	})
+	.addInto(toolsEl2);
+
+const highLightB = view("x")
+	.style({ width: "120px", overflow: "scroll" })
 	.addInto(toolsEl2);
 
 initDKH({ pureStyle: true });
