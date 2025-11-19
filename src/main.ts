@@ -146,6 +146,11 @@ function setBoard(board: BoardItem[]) {
 						}
 						noteGrid.add(nel);
 					}
+					if (item.notes.length === 1) {
+						noteGrid.on("dblclick", () => {
+							setCellValue(boardIndex, item.notes[0]);
+						});
+					}
 				}
 			} else {
 				cellEl.add("");
