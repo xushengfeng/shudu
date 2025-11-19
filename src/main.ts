@@ -320,7 +320,7 @@ function setData(data: BoardItem[]) {
 }
 
 function checkData(values: Array<BoardItem>) {
-	const every = values.every((v) => typeof v === "number");
+	const every = values.every((v) => typeof v.value === "number");
 	const s = solve(values.map((v) => v.value));
 	if (!s.solved) {
 		return "error";
