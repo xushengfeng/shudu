@@ -234,7 +234,7 @@ function setCellValue(index: number, value: number) {
 	setBoard(data);
 	setData(data);
 
-	checkDataEl(data.map((i) => i.value));
+	checkDataEl(data);
 }
 
 function setCellValueNote(index: number, value: number) {
@@ -253,6 +253,8 @@ function setCellValueNote(index: number, value: number) {
 
 	setBoard(data);
 	setData(data);
+
+	checkDataEl(data);
 }
 
 function setData(data: BoardItem[]) {
@@ -292,7 +294,7 @@ function setData(data: BoardItem[]) {
 			focusIndex = d.focusIndex;
 			setBoard(nowData);
 			setFocus(focusIndex);
-			checkDataEl(nowData.map((i) => i.value));
+			checkDataEl(nowData);
 		});
 		return nodeP;
 	}
@@ -317,21 +319,30 @@ function setData(data: BoardItem[]) {
 	}
 }
 
-function checkData(values: Array<number | null>) {
+function checkData(values: Array<BoardItem>) {
 	const every = values.every((v) => typeof v === "number");
-	const s = solve(values);
+	const s = solve(values.map((v) => v.value));
 	if (!s.solved) {
 		return "error";
 	} else {
 		if (every) {
 			return "success";
 		} else {
+			for (const [i, v] of values.entries()) {
+				if (
+					v.type === "note" &&
+					v.value === null &&
+					!v.notes.includes(s.board?.at(i) ?? 0)
+				) {
+					return "error";
+				}
+			}
 			return "normal";
 		}
 	}
 }
 
-function checkDataEl(values: Array<number | null>) {
+function checkDataEl(values: Array<BoardItem>) {
 	const c = checkData(values);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	if (c === "success") {
@@ -342,7 +353,7 @@ function checkDataEl(values: Array<number | null>) {
 
 	highLightB.clear();
 	const unusedNum = canNumber.flatMap((n) =>
-		values.filter((v) => v === n).length === 9 ? [] : [n],
+		values.filter((v) => v.value === n).length === 9 ? [] : [n],
 	);
 	highLightB.add(
 		view()
@@ -401,7 +412,7 @@ function initGame(d: Difficulty) {
 	setBoard(nowData);
 	setFocus(focusIndex);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
-	checkDataEl(ss);
+	checkDataEl(nowData);
 }
 
 let nowData: BoardItem[] = [];
