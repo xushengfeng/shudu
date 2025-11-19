@@ -329,7 +329,9 @@ function fastCheckData(values: Array<BoardItem>) {
 			const ns = new Set(
 				bIndices
 					.flatMap((i) =>
-						values[i].type === "note" ? values[i].notes : values[i].value,
+						values[i].value === null && values[i].type === "note"
+							? values[i].notes
+							: values[i].value,
 					)
 					.filter((v): v is number => typeof v === "number"),
 			);
@@ -342,7 +344,9 @@ function fastCheckData(values: Array<BoardItem>) {
 			const ns = new Set(
 				xIndexes
 					.flatMap((i) =>
-						values[i].type === "note" ? values[i].notes : values[i].value,
+						values[i].value === null && values[i].type === "note"
+							? values[i].notes
+							: values[i].value,
 					)
 					.filter((v): v is number => typeof v === "number"),
 			);
@@ -355,7 +359,9 @@ function fastCheckData(values: Array<BoardItem>) {
 			const ns = new Set(
 				yIndexes
 					.flatMap((i) =>
-						values[i].type === "note" ? values[i].notes : values[i].value,
+						values[i].value === null && values[i].type === "note"
+							? values[i].notes
+							: values[i].value,
 					)
 					.filter((v): v is number => typeof v === "number"),
 			);
