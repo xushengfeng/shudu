@@ -304,31 +304,71 @@ function setData(data: BoardItem[]) {
 	}
 }
 
-function checkData(values: Array<BoardItem>) {
+function fastCheckData(values: Array<BoardItem>) {
 	const every = values.every((v) => typeof v.value === "number");
-	const s = solve(values.map((v) => v.value));
-	if (!s.solved) {
-		return "error";
+	for (const [i, v] of values.entries()) {
+		if (v.value === null) continue;
+		const n = getNei(
+			values.map((vv) => vv.value),
+			i,
+		);
+		if (new Set(n.x).size !== n.x.length) return "error";
+		if (new Set(n.y).size !== n.y.length) return "error";
+		if (new Set(n.b).size !== n.b.length) return "error";
+	}
+	if (every) {
+		return "success";
 	} else {
-		if (every) {
-			return "success";
-		} else {
-			for (const [i, v] of values.entries()) {
-				if (
-					v.type === "note" &&
-					v.value === null &&
-					!v.notes.includes(s.board?.at(i) ?? 0)
-				) {
-					return "error";
-				}
+		for (const v of values) {
+			if (v.type === "note" && v.value === null && v.notes.length === 0) {
+				return "error";
 			}
-			return "normal";
 		}
+		for (const bindex of zeroToNine) {
+			const bIndices = blockIndex(bindex);
+			const ns = new Set(
+				bIndices
+					.flatMap((i) =>
+						values[i].type === "note" ? values[i].notes : values[i].value,
+					)
+					.filter((v): v is number => typeof v === "number"),
+			);
+			if (ns.size < 9) {
+				return "error";
+			}
+		}
+		for (const x of zeroToNine) {
+			const xIndexes = zeroToNine.map((i) => x + i * 9);
+			const ns = new Set(
+				xIndexes
+					.flatMap((i) =>
+						values[i].type === "note" ? values[i].notes : values[i].value,
+					)
+					.filter((v): v is number => typeof v === "number"),
+			);
+			if (ns.size < 9) {
+				return "error";
+			}
+		}
+		for (const y of zeroToNine) {
+			const yIndexes = zeroToNine.map((i) => y * 9 + i);
+			const ns = new Set(
+				yIndexes
+					.flatMap((i) =>
+						values[i].type === "note" ? values[i].notes : values[i].value,
+					)
+					.filter((v): v is number => typeof v === "number"),
+			);
+			if (ns.size < 9) {
+				return "error";
+			}
+		}
+		return "normal";
 	}
 }
 
 function checkDataEl(values: Array<BoardItem>) {
-	const c = checkData(values);
+	const c = fastCheckData(values);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	if (c === "success") {
 		boardEl.el.classList.add(boardSuccessClass);
@@ -503,6 +543,27 @@ const selectX = select<Difficulty>([
 ]);
 
 selectX.addInto(toolsEl2);
+
+button("检查")
+	.on("click", () => {
+		const init = timeLine.data[0]?.dataList;
+		if (!init) return;
+		const l = init.map((i) => i.value);
+		const r = solve(l);
+		console.log(r);
+		const a = r.board ?? [];
+		const s = a.every((v, i) => {
+			if (v === null) return true;
+			if (nowData[i].value === null && nowData[i].type === "note") {
+				return nowData[i].notes.includes(v);
+			}
+			return v === nowData[i].value;
+		});
+		if (!s) {
+			alert("当前解法与初始题目不符");
+		}
+	})
+	.addInto(toolsEl2);
 
 const highLightB = view("x")
 	.style({ overflow: "scroll", gap: "4px" })
