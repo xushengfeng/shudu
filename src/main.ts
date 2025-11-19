@@ -96,36 +96,13 @@ function creatBoardItemFromValue(values: Array<number | null>): BoardItem[] {
 }
 
 function setBoard(board: BoardItem[]) {
-	boardEl
-		.clear()
-		.style({
-			display: "grid",
-			gridTemplateColumns: "repeat(3, min-content)",
-			gridTemplateRows: "repeat(3, auto)",
-			gap: "0px",
-		})
-		.class(mainClassBoard);
+	boardEl.clear().class(mainClassBoard);
 
 	for (const mainIndex of zeroToNine) {
-		const boxEl = view()
-			.addInto(boardEl)
-			.style({
-				display: "grid",
-				gridTemplateColumns: "repeat(3, 40px)",
-				gridTemplateRows: "repeat(3, 40px)",
-			})
-			.class(mainClassBlock);
+		const boxEl = view().addInto(boardEl).class(mainClassBlock);
 		for (const boxIndex of zeroToNine) {
 			const cellEl = view()
 				.addInto(boxEl)
-				.style({
-					width: "40px",
-					height: "40px",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					fontSize: "20px",
-				})
 				.class(mainClassCell)
 				.on("click", () => {
 					setFocus(blockIndex(mainIndex)[boxIndex]);
@@ -142,20 +119,23 @@ function setBoard(board: BoardItem[]) {
 					const noteGrid = view()
 						.style({
 							display: "grid",
-							gridTemplateColumns: "repeat(3, 33.333%)",
-							gridTemplateRows: "repeat(3, 33.333%)",
+							gridTemplateColumns: "repeat(3, 1fr)",
+							gridTemplateRows: "repeat(3, 1fr)",
 							width: "100%",
 							height: "100%",
 							fontSize: "10px",
 							lineHeight: "10px",
-							textAlign: "center",
 							color: "#666",
 						})
 						.addInto(cellEl);
 					for (const i of canNumber) {
-						const nel = view().add(
-							item.notes.includes(i) ? String(i) : undefined,
-						);
+						const nel = view()
+							.add(item.notes.includes(i) ? String(i) : undefined)
+							.style({
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							});
 						if (item.notes.includes(i)) {
 							nel.data({ n: String(i) });
 						}
@@ -174,6 +154,10 @@ function setFocus(index: number) {
 
 	console.log("f", index);
 
+	for (const el of boardEl.queryAll(`.${celFocusClass}`))
+		el.el.classList.remove(celFocusClass);
+	boardEl.query(`[data-index="${index}"]`)?.class(celFocusClass);
+
 	inputEl.clear().style({
 		display: "grid",
 		gridTemplateColumns: "repeat(3, 40px)",
@@ -182,7 +166,7 @@ function setFocus(index: number) {
 	});
 
 	for (const i of canNumber) {
-		const btnEl = view()
+		const btnEl = button()
 			.addInto(inputEl)
 			.style({
 				width: "40px",
@@ -192,7 +176,6 @@ function setFocus(index: number) {
 				alignItems: "center",
 				justifyContent: "center",
 				fontSize: "20px",
-				cursor: "pointer",
 			})
 			.add(String(i));
 
@@ -203,6 +186,7 @@ function setFocus(index: number) {
 					btnEl.style({ backgroundColor: "lightblue" });
 				}
 			}
+			btnEl.style({ borderRadius: "50%" });
 			btnEl.on("click", () => {
 				setCellValueNote(focusIndex, i);
 				setFocus(focusIndex);
@@ -278,13 +262,14 @@ function setData(data: BoardItem[]) {
 		{ main: ElType<HTMLElement>; childrenWarp: ElType<HTMLElement> }
 	>();
 	function renderNode(id: string) {
-		const nodeP = view("x");
+		const nodeP = view("x").style({ gap: "4px" });
 		const nodeEl = view().style({
 			width: "16px",
 			height: "16px",
 			border: "1px solid gray",
+			borderRadius: "50%",
 		});
-		const c = view("y");
+		const c = view("y").style({ gap: "4px" });
 		els.set(id, { main: nodeP, childrenWarp: c });
 		nodeP.add([nodeEl, c]);
 		nodeEl.on("click", () => {
@@ -356,8 +341,12 @@ function checkDataEl(values: Array<BoardItem>) {
 		values.filter((v) => v.value === n).length === 9 ? [] : [n],
 	);
 	highLightB.add(
-		view()
-			.add("x")
+		button("x")
+			.style({
+				minWidth: "20px",
+				border: "1px solid gray",
+				borderRadius: "4px",
+			})
 			.on("click", () => {
 				// 取消所有高亮
 				for (const cellEl of boardEl.queryAll("[data-n]")) {
@@ -367,10 +356,11 @@ function checkDataEl(values: Array<BoardItem>) {
 	);
 	for (const n of unusedNum) {
 		highLightB.add(
-			view()
+			button()
 				.style({
-					width: "20px",
-					height: "20px",
+					minWidth: "20px",
+					border: "1px solid gray",
+					borderRadius: "4px",
 				})
 				.add(String(n))
 				.on("click", () => {
@@ -429,28 +419,60 @@ const appEl = view("x", "wrap").addInto().style({
 	height: "100vh",
 	alignItems: "center",
 	justifyContent: "center",
+	alignContent: "center",
 	gap: "16px",
 });
 
 const boardEl = view().addInto(appEl);
 
-const mainClassBoard = addClass({}, {});
-const mainClassBlock = addClass({ border: "1px solid gray" }, {});
-const mainClassCell = addClass({ border: "1px solid lightgray" }, {});
+const mainClassBoard = addClass(
+	{
+		display: "grid",
+		gridTemplateColumns: "repeat(3, 1fr)",
+		gridTemplateRows: "repeat(3, 1fr)",
+		gap: "0px",
+		width: "min(calc(100vw - 16px), 360px)",
+		height: "min(calc(100vw - 16px), 360px)",
+		userSelect: "none",
+	},
+	{},
+);
+const mainClassBlock = addClass(
+	{
+		border: "1px solid gray",
+		display: "grid",
+		gridTemplateColumns: "repeat(3, 1fr)",
+		gridTemplateRows: "repeat(3, 1fr)",
+	},
+	{},
+);
+const mainClassCell = addClass(
+	{
+		border: "1px solid lightgray",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		fontSize: "20px",
+	},
+	{},
+);
 
 const celNumHighlightClass = addClass({ backgroundColor: "yellow" }, {});
+const celFocusClass = addClass({ boxShadow: "inset 0 0 4px yellow" }, {});
 
 const boardSuccessClass = addClass({ boxShadow: "0 0 10px green" }, {});
 const boardErrorClass = addClass({ boxShadow: "0 0 10px red" }, {});
 
-const toolsEl = view().addInto(appEl);
+const toolsEl = view("y")
+	.style({ gap: "16px", width: "min(360px, 100vw)", alignItems: "center" })
+	.addInto(appEl);
 
-const toolsEl2 = view().addInto(toolsEl);
+const toolsEl2 = view("y").style({ gap: "16px" }).addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
-	.style({ maxWidth: "120px", maxHeight: "60px", overflow: "scroll" });
+	.style({ width: "100%", maxHeight: "60px", overflow: "scroll" });
 
-const toolsEl3 = view().addInto(toolsEl);
+const toolsEl3 = view("x").style({ gap: "4px" }).addInto(toolsEl);
 
 button("普通输入")
 	.addInto(toolsEl3)
@@ -482,18 +504,8 @@ const selectX = select<Difficulty>([
 
 selectX.addInto(toolsEl2);
 
-button("检查")
-	.on("click", () => {
-		const b = nowData.map((i) => i.value);
-		const r = solve(b);
-		console.log(r);
-		const a = r.board ?? [];
-		console.log(b.every((v, i) => a[i] === v));
-	})
-	.addInto(toolsEl2);
-
 const highLightB = view("x")
-	.style({ width: "120px", overflow: "scroll" })
+	.style({ overflow: "scroll", gap: "4px" })
 	.addInto(toolsEl2);
 
 initDKH({ pureStyle: true });
