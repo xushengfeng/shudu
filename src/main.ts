@@ -485,6 +485,14 @@ button("检查")
 	})
 	.addInto(toolsEl2);
 
+button("提示")
+	.on("click", () => {
+		const r = mySolver(nowData.map((i) => i.value));
+		console.log(r);
+		// todo
+	})
+	.addInto(toolsEl2);
+
 const highLightB = view("x")
 	.style({ overflow: "scroll", gap: "4px" })
 	.addInto(toolsEl2);
