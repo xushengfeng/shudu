@@ -7,6 +7,7 @@ import {
 	creatBoardItemFromValue,
 	fastCheckData,
 	getNeiIndex,
+	mySolver,
 	zeroToNine,
 } from "./shudu";
 
@@ -299,14 +300,14 @@ function initGame(d: Difficulty) {
 	const ss = generate(d);
 	console.log(ss);
 
-	const a = solve(ss);
-	console.log(a);
-
 	const x = analyze(ss);
 	console.log(x);
 
 	const xx = hint(ss);
 	console.log(xx);
+
+	const a = mySolver(ss);
+	console.log(a);
 
 	initBoard(ss);
 }
@@ -465,16 +466,17 @@ button("检查")
 		const init = timeLine.data[0]?.dataList;
 		if (!init) return;
 		const l = init.map((i) => i.value);
-		const r = solve(l);
+		const r = mySolver(l);
 		console.log(r);
-		const a = r.board ?? [];
-		const s = a.every((v, i) => {
-			if (v === null) return true;
-			if (nowData[i].value === null && nowData[i].type === "note") {
-				return nowData[i].notes.includes(v);
-			}
-			return v === nowData[i].value;
-		});
+		const s = r.board.some((a) =>
+			a.every((v, i) => {
+				if (v === null) return true;
+				if (nowData[i].value === null && nowData[i].type === "note") {
+					return nowData[i].notes.includes(v);
+				}
+				return v === nowData[i].value;
+			}),
+		);
 		if (!s) {
 			alert("当前解法与初始题目不符");
 		}

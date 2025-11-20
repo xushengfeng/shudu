@@ -6,11 +6,13 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "vitest"
     },
     "devDependencies": {
         "typescript": "~5.9.3",
-        "vite": "^7.2.2"
+        "vite": "^7.2.2",
+        "vitest": "^4.0.10"
     },
     "dependencies": {
         "dkh-ui": "^0.14.2",

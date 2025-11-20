@@ -1,6 +1,3 @@
-export function mySolver(values: Array<number | null>) {
-	console.log(values);
-}
 export type BoardItem =
 	| { type: "number"; value: number }
 	| { type: "note"; value: number | null; notes: number[] };
@@ -208,4 +205,152 @@ export function fastCheckData(values: Array<BoardItem>):
 		}
 		return { type: "normal" };
 	}
+}
+
+export function mySolver(values: Array<number | null>) {
+	const boardItems = creatBoardItemFromValue(values);
+
+	const fullLog: string[] = [];
+
+	let runCount = 0;
+	const maxDeep = 5000;
+
+	function setValue(board: BoardItem[], index: number, v: number) {
+		board[index].value = v;
+		const ni = getNeiIndex(index);
+		for (const x of Object.values(ni))
+			for (const i of x) {
+				const c = board[i];
+				if (c.type === "note") c.notes = c.notes.filter((i) => i !== v);
+			}
+	}
+
+	function count(o: number[]) {
+		const r: Record<number, number> = {};
+		for (const i of o) {
+			r[i] = (r[i] || 0) + 1;
+		}
+		return r;
+	}
+
+	function x(
+		board: BoardItem[],
+	):
+		| { type: "error" }
+		| { type: "success"; board: BoardItem[] }
+		| { type: "step"; board: BoardItem[] }
+		| { type: "continue"; board: BoardItem[] } {
+		// logBoard(board);
+
+		const check = fastCheckData(board);
+		if (check.type === "error") {
+			fullLog.push("Error detected during fast check");
+			return { type: "error" };
+		}
+		if (check.type === "success") return { type: "success", board };
+
+		// 单个候选数
+		for (const [i, v] of board.entries()) {
+			if (v.type === "note" && v.value === null && v.notes.length === 1) {
+				fullLog.push(
+					`Set value at index ${i} to ${v.notes[0]} based on single candidate`,
+				);
+				setValue(board, i, v.notes[0]);
+				return { type: "step", board };
+			}
+		}
+
+		// 行、列、区块唯一候选数
+		for (const indexType of ["x", "y", "b"] as const) {
+			for (const mainIndex of zeroToNine) {
+				let indices: number[] = [];
+				if (indexType === "x") {
+					indices = zeroToNine.map((i) => mainIndex * 9 + i);
+				}
+				if (indexType === "y") {
+					indices = zeroToNine.map((i) => mainIndex + i * 9);
+				}
+				if (indexType === "b") {
+					indices = blockIndex(mainIndex);
+				}
+				const xv = indices
+					.map((i) => board[i])
+					.flatMap((i) =>
+						i.type === "note" && i.value === null ? i.notes : [],
+					);
+				const xx = count(xv);
+				for (const [k, v] of Object.entries(xx)) {
+					if (v === 1) {
+						// biome-ignore lint/style/noNonNullAssertion: ===1
+						const index = indices.find(
+							(i) =>
+								board[i].type === "note" &&
+								board[i].value === null &&
+								board[i].notes.includes(Number(k)),
+						)!;
+						fullLog.push(
+							`Set value at index ${index} to ${k} based on unique candidate in ${indexType} ${mainIndex}`,
+						);
+						setValue(board, index, Number(k));
+						return { type: "step", board };
+					}
+				}
+			}
+		}
+
+		return { type: "continue", board };
+	}
+
+	function xx(board: BoardItem[]) {
+		const stack: Array<{ board: BoardItem[] }> = [
+			{ board: structuredClone(board) },
+		];
+		const results: Array<{ type: "success"; board: BoardItem[] }> = [];
+
+		while (stack.length > 0) {
+			runCount++;
+			if (runCount > maxDeep) {
+				console.log("超出最大深度，停止计算");
+				break;
+			}
+			const { board } = stack.pop()!;
+			const res = x(board);
+			if (res.type === "step") {
+				stack.push({ board: structuredClone(res.board) });
+				continue;
+			}
+			if (res.type === "continue") {
+				// 暴力求解
+				b: for (let noteCount = 2; noteCount <= 9; noteCount++) {
+					for (const [index, v] of res.board.entries()) {
+						if (v.type === "note" && v.value === null) {
+							if (v.notes.length === noteCount) {
+								for (let i = 0; i < noteCount; i++) {
+									const b = structuredClone(res.board);
+									fullLog.push(
+										`Set value at index ${index} to ${v.notes[i]} based on brute force`,
+									);
+									setValue(b, index, v.notes[i]);
+									stack.push({ board: b });
+								}
+								break b;
+							}
+						}
+					}
+				}
+			}
+			if (res.type === "success") {
+				results.push(res);
+			}
+		}
+
+		return results;
+	}
+
+	const bo = xx(boardItems).map((i) => i.board.map((v) => v.value as number));
+
+	return {
+		board: bo,
+		fullLog,
+	};
 }
