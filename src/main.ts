@@ -645,7 +645,10 @@ button("导入")
 	.addInto(toolsEl2);
 button("导出")
 	.on("click", () => {
-		prompt(nowData.map((i) => (i.value === null ? 0 : i.value)).join(""));
+		prompt(
+			undefined,
+			nowData.map((i) => (i.value === null ? 0 : i.value)).join(""),
+		);
 	})
 	.addInto(toolsEl2);
 
