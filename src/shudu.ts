@@ -419,6 +419,57 @@ export function mySolver(values: Array<number | null>) {
 			}
 		}
 
+		// x-wing
+		// 以x为例子，某个数字，在xa行仅有两个候选，在xb行也仅有两个候选，且这两个候选的y列位置相同，那么这两个列位置在其他的同数字候选可以删除
+		// 因为其他位置掩盖了其中一个，另一个位置就必须选择那个数字，导致同一列数字相同
+		// 可以证明，只有xa xb，不再有xc等
+		for (const num of canNumber) {
+			for (const indexType of ["x", "y"] as const) {
+				const s = new Map<string, number>();
+
+				for (const n of zeroToNine) {
+					let indexes: readonly [number, BoardItem][] = [];
+					if (indexType === "x") {
+						indexes = zeroToNine.map((x) => [x, board[n * 9 + x]] as const);
+					} else {
+						indexes = zeroToNine.map((y) => [y, board[y * 9 + n]] as const);
+					}
+					const l = indexes.filter(
+						([_, v]) =>
+							v.type === "note" && v.value === null && v.notes.includes(num),
+					);
+					if (l.length !== 2) continue;
+					const lineKey = l.map((i) => i[0]).join(",");
+					if (s.has(lineKey)) {
+						for (const nn of l) {
+							for (const z of zeroToNine) {
+								if (z === n) continue;
+								if (z === s.get(lineKey)) continue;
+								const index = indexType === "x" ? z * 9 + nn[0] : nn[0] * 9 + z;
+								if (
+									board[index].type === "note" &&
+									board[index].value === null &&
+									board[index].notes.includes(num)
+								) {
+									fullLog.push(
+										`Remove note ${num} at index ${index} based on x-wing for ${indexType} ${n} and ${s.get(
+											lineKey,
+										)} along positions ${lineKey}`,
+									);
+									board[index].notes = board[index].notes.filter(
+										(i) => i !== num,
+									);
+									return { type: "step", board };
+								}
+							}
+						}
+					} else {
+						s.set(lineKey, n);
+					}
+				}
+			}
+		}
+
 		return { type: "continue", board };
 	}
 

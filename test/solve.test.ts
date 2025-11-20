@@ -1,4 +1,4 @@
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import { mySolver } from "../src/shudu.ts";
 
 const l: { q: string; a: string[] }[] = [
@@ -52,11 +52,9 @@ test("solve", () => {
 			.split("")
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver(l);
-		if (xx.board.length !== x.a.length) {
-			throw new Error("length not eq");
-		}
-
+		console.log("thinking", x.q);
 		console.log(xx.fullLog.length, xx.brunchCount);
+		expect(xx.board.length).eq(x.a.length);
 
 		for (const i of xx.board) {
 			if (!x.a.includes(i.join(""))) {
@@ -83,19 +81,31 @@ test("宫格消除 Claiming", () => {
 			.split("")
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver(l);
-		if (xx.board.length !== x.a.length) {
-			throw new Error("length not eq");
-		}
 
 		console.log(xx.fullLog.length, xx.brunchCount);
 
-		for (const i of xx.board) {
-			if (!x.a.includes(i.join(""))) {
-				console.log("fail");
-				throw new Error("fail");
-			} else {
-				console.log("pass", i.join(""));
-			}
-		}
+		const i = xx.board[0];
+		expect(i.join("")).toBe(x.a[0]);
+	}
+});
+
+test("xwing", () => {
+	const l: { q: string; a: string[] }[] = [
+		{
+			q: "600009000013027960794860200006083759907050000005970000000000000371690800060040100",
+			a: [
+				"682319574513427968794865213146283759927154386835976421458731692371692845269548137",
+			],
+		},
+	];
+	for (const x of l) {
+		const l = x.q
+			.split("")
+			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
+		const xx = mySolver(l);
+
+		console.log(xx.fullLog.length, xx.brunchCount);
+		const i = xx.board[0];
+		expect(i.join("")).toBe(x.a[0]);
 	}
 });
