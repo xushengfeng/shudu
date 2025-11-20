@@ -97,7 +97,7 @@ export function fastCheckData(values: Array<BoardItem>):
 	  }
 	| {
 			type: "error";
-			errorType: "less" | "empty";
+			errorType: "more" | "less" | "empty";
 			posi: PosiT;
 			n: number[];
 	  } {
@@ -111,22 +111,22 @@ export function fastCheckData(values: Array<BoardItem>):
 		if (new Set(n.x).size !== n.x.length)
 			return {
 				type: "error",
-				errorType: "less",
-				n: [],
+				errorType: "more",
+				n: n.x.filter((v, i, arr) => arr.indexOf(v) !== i),
 				posi: { type: "x", p: Math.floor(i / 9) },
 			};
 		if (new Set(n.y).size !== n.y.length)
 			return {
 				type: "error",
-				errorType: "less",
-				n: [],
+				errorType: "more",
+				n: n.y.filter((v, i, arr) => arr.indexOf(v) !== i),
 				posi: { type: "y", p: i % 9 },
 			};
 		if (new Set(n.b).size !== n.b.length)
 			return {
 				type: "error",
-				errorType: "less",
-				n: [],
+				errorType: "more",
+				n: n.b.filter((v, i, arr) => arr.indexOf(v) !== i),
 				posi: { type: "b", p: index2BlockIndex(i) },
 			};
 	}

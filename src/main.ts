@@ -252,6 +252,8 @@ function checkDataEl(values: Array<BoardItem>) {
 			errorTextEl.add("空的候选");
 		} else if (c.errorType === "less") {
 			errorTextEl.add(`缺少数字: ${c.n.join(", ")}`);
+		} else if (c.errorType === "more") {
+			errorTextEl.add(`多余数字: ${c.n.join(", ")}`);
 		}
 	}
 
