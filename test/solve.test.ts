@@ -68,3 +68,34 @@ test("solve", () => {
 		}
 	}
 });
+
+test("宫格消除 Claiming", () => {
+	const l: { q: string; a: string[] }[] = [
+		{
+			q: "000756381567030924318294576895403000003080400000900835032010040450372008781649253",
+			a: [
+				"249756381567138924318294576895463712123587469674921835932815647456372198781649253",
+			],
+		},
+	];
+	for (const x of l) {
+		const l = x.q
+			.split("")
+			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
+		const xx = mySolver(l);
+		if (xx.board.length !== x.a.length) {
+			throw new Error("length not eq");
+		}
+
+		console.log(xx.fullLog.length, xx.brunchCount);
+
+		for (const i of xx.board) {
+			if (!x.a.includes(i.join(""))) {
+				console.log("fail");
+				throw new Error("fail");
+			} else {
+				console.log("pass", i.join(""));
+			}
+		}
+	}
+});

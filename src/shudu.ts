@@ -299,7 +299,8 @@ export function mySolver(values: Array<number | null>) {
 			}
 		}
 
-		// 指向 pointing 某数字在宫格仅同一行或同一列，延伸过去的其他行列就不能存在这个数字，否个这个宫格会没有数字选择
+		// 指向 pointing
+		// 某数字在宫格仅同一行或同一列，延伸过去的其他行列就不能存在这个数字，否个这个宫格会没有数字选择
 		for (const bindex of zeroToNine) {
 			const bIndices = blockIndex(bindex);
 			const bv = bIndices.map((i) => board[i]);
@@ -359,6 +360,59 @@ export function mySolver(values: Array<number | null>) {
 							);
 							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
 							return { type: "step", board };
+						}
+					}
+				}
+			}
+		}
+
+		// Claiming
+		// 某数字在行或列，且他们仅同一宫格内，宫格内原来可以在其他地方有这个数字的候选，如果其他地方选了候选，宫格排除这个数字，进而导致行列无法填写这个数字
+		for (const indexType of ["x", "y"] as const) {
+			for (const mainIndex of zeroToNine) {
+				let indices: number[] = [];
+				if (indexType === "x") {
+					indices = zeroToNine.map((i) => mainIndex * 9 + i);
+				}
+				if (indexType === "y") {
+					indices = zeroToNine.map((i) => mainIndex + i * 9);
+				}
+				const v = indices.map((i) => board[i]);
+				const noteV = v.flatMap((i) =>
+					i.type === "note" && i.value === null ? i.notes : [],
+				);
+				const c = count(noteV);
+				const x = Object.entries(c).filter(([_, v]) => v <= 3);
+				if (x.length === 0) continue;
+				for (const [n] of x) {
+					const indx = indices
+						.filter(
+							(i) =>
+								board[i].type === "note" &&
+								board[i].value === null &&
+								board[i].notes.includes(Number(n)),
+						)
+						.map((i) => index2BlockIndex(i));
+					const allB = new Set(indx);
+					if (allB.size === 1) {
+						// 都在同一宫格内
+						const bindex = Array.from(allB)[0];
+						const bIndices = blockIndex(bindex);
+						for (const bi of bIndices) {
+							if (
+								!indices.includes(bi) &&
+								board[bi].type === "note" &&
+								board[bi].value === null &&
+								board[bi].notes.includes(Number(n))
+							) {
+								fullLog.push(
+									`Remove note ${n} at index ${bi} based on claiming in ${indexType} ${mainIndex} within block ${bindex}`,
+								);
+								board[bi].notes = board[bi].notes.filter(
+									(i) => i !== Number(n),
+								);
+								return { type: "step", board };
+							}
 						}
 					}
 				}
