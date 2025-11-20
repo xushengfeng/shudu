@@ -496,6 +496,25 @@ document.body.onkeyup = (e) => {
 		const v = parseInt(e.key, 10);
 		setCellValue(focusIndex, v);
 	}
+	if (e.key.startsWith("Arrow")) {
+		const x = focusIndex % 9;
+		const y = Math.floor(focusIndex / 9);
+		let nx = x;
+		let ny = y;
+		if (e.key === "ArrowUp") {
+			ny = (y + 8) % 9;
+		}
+		if (e.key === "ArrowDown") {
+			ny = (y + 1) % 9;
+		}
+		if (e.key === "ArrowLeft") {
+			nx = (x + 8) % 9;
+		}
+		if (e.key === "ArrowRight") {
+			nx = (x + 1) % 9;
+		}
+		setFocus(ny * 9 + nx);
+	}
 };
 
 // @ts-expect-error
