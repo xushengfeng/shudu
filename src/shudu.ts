@@ -211,6 +211,7 @@ export function mySolver(values: Array<number | null>) {
 	const boardItems = creatBoardItemFromValue(values);
 
 	const fullLog: string[] = [];
+	let brunchCount = 0;
 
 	let runCount = 0;
 	const maxDeep = 5000;
@@ -298,6 +299,72 @@ export function mySolver(values: Array<number | null>) {
 			}
 		}
 
+		// 指向 pointing 某数字在宫格仅同一行或同一列，延伸过去的其他行列就不能存在这个数字，否个这个宫格会没有数字选择
+		for (const bindex of zeroToNine) {
+			const bIndices = blockIndex(bindex);
+			const bv = bIndices.map((i) => board[i]);
+			const noteV = bv.flatMap((i) =>
+				i.type === "note" && i.value === null ? i.notes : [],
+			);
+			const c = count(noteV);
+			const x = Object.entries(c).filter(([_, v]) => v <= 3);
+			if (x.length === 0) continue;
+
+			for (const [n] of x) {
+				const xyOfCell = bIndices
+					.filter(
+						(i) =>
+							board[i].type === "note" &&
+							board[i].value === null &&
+							board[i].notes.includes(Number(n)),
+					)
+					.map((i) => ({
+						x: i % 9,
+						y: Math.floor(i / 9),
+					}));
+				const allX = new Set(xyOfCell.map((i) => i.x));
+				const allY = new Set(xyOfCell.map((i) => i.y));
+				if (allX.size === 1) {
+					// x相同，即找竖行
+					const xIndex = Array.from(allX)[0];
+					for (const y of zeroToNine) {
+						const ci = y * 9 + xIndex;
+						if (
+							!bIndices.includes(ci) &&
+							board[ci].type === "note" &&
+							board[ci].value === null &&
+							board[ci].notes.includes(Number(n))
+						) {
+							fullLog.push(
+								`Remove note ${n} at index ${ci} based on pointing in block ${bindex} along x ${xIndex}`,
+							);
+							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
+							return { type: "step", board };
+						}
+					}
+				}
+				if (allY.size === 1) {
+					// y相同，即找横行
+					const yIndex = Array.from(allY)[0];
+					for (const x of zeroToNine) {
+						const ci = yIndex * 9 + x;
+						if (
+							!bIndices.includes(ci) &&
+							board[ci].type === "note" &&
+							board[ci].value === null &&
+							board[ci].notes.includes(Number(n))
+						) {
+							fullLog.push(
+								`Remove note ${n} at index ${ci} based on pointing in block ${bindex} along y ${yIndex}`,
+							);
+							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
+							return { type: "step", board };
+						}
+					}
+				}
+			}
+		}
+
 		return { type: "continue", board };
 	}
 
@@ -313,6 +380,7 @@ export function mySolver(values: Array<number | null>) {
 				console.log("超出最大深度，停止计算");
 				break;
 			}
+			// biome-ignore lint/style/noNonNullAssertion: >0
 			const { board } = stack.pop()!;
 			const res = x(board);
 			if (res.type === "step") {
@@ -330,6 +398,7 @@ export function mySolver(values: Array<number | null>) {
 									fullLog.push(
 										`Set value at index ${index} to ${v.notes[i]} based on brute force`,
 									);
+									brunchCount++;
 									setValue(b, index, v.notes[i]);
 									stack.push({ board: b });
 								}
@@ -352,5 +421,6 @@ export function mySolver(values: Array<number | null>) {
 	return {
 		board: bo,
 		fullLog,
+		brunchCount,
 	};
 }

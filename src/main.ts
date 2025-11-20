@@ -497,3 +497,8 @@ document.body.onkeyup = (e) => {
 		setCellValue(focusIndex, v);
 	}
 };
+
+// @ts-expect-error
+window.__setBoard = (b: BoardItem[]) => {
+	setBoard(b);
+};
