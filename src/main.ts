@@ -177,6 +177,10 @@ function setData(data: BoardItem[]) {
 	timeLine.pointer = nid;
 	console.log(timeLine);
 
+	reRenderTimeLine();
+}
+
+function reRenderTimeLine() {
 	timeLineEl.clear();
 	const els = new Map<
 		string,
@@ -190,6 +194,14 @@ function setData(data: BoardItem[]) {
 			border: "1px solid gray",
 			borderRadius: "50%",
 		});
+		if (timeLine.data[id].state === "success") {
+			nodeEl.class(timeLineClass.success);
+		} else if (timeLine.data[id].state === "error") {
+			nodeEl.class(timeLineClass.error);
+		} else if (timeLine.data[id].state === "checked") {
+			nodeEl.class(timeLineClass.checked);
+		}
+		if (timeLine.pointer === id) nodeEl.class(timeLineClass.focus);
 		const c = view("y").style({ gap: "4px" });
 		els.set(id, { main: nodeP, childrenWarp: c });
 		nodeP.add([nodeEl, c]);
@@ -201,6 +213,11 @@ function setData(data: BoardItem[]) {
 			setBoard(nowData);
 			setFocus(focusIndex);
 			checkDataEl(nowData);
+
+			timeLineEl
+				.query(`.${timeLineClass.focus}`)
+				?.el.classList.remove(timeLineClass.focus);
+			nodeEl.class(timeLineClass.focus);
 		});
 		return nodeP;
 	}
@@ -255,6 +272,15 @@ function checkDataEl(values: Array<BoardItem>) {
 		} else if (c.errorType === "more") {
 			errorTextEl.add(`多余数字: ${c.n.join(", ")}`);
 		}
+	}
+
+	if (c.type === "error") {
+		timeLine.data[timeLine.pointer].state = "error";
+		reRenderTimeLine();
+	}
+	if (c.type === "success") {
+		timeLine.data[timeLine.pointer].state = "success";
+		reRenderTimeLine();
 	}
 
 	highLightB.clear();
@@ -332,7 +358,14 @@ let nowData: BoardItem[] = [];
 let focusIndex: number = -1;
 let inputType: "normal" | "note" = "normal";
 const timeLine: {
-	data: Record<string, { dataList: BoardItem[]; focusIndex: number }>;
+	data: Record<
+		string,
+		{
+			dataList: BoardItem[];
+			focusIndex: number;
+			state?: "error" | "checked" | "success";
+		}
+	>;
 	link: Record<string, string[]>;
 	pointer: string;
 } = { data: {}, pointer: "0", link: {} };
@@ -385,6 +418,13 @@ const celFocusClass = addClass({ boxShadow: "inset 0 0 4px yellow" }, {});
 
 const boardSuccessClass = addClass({ boxShadow: "0 0 10px green" }, {});
 const boardErrorClass = addClass({ boxShadow: "0 0 10px red" }, {});
+
+const timeLineClass = {
+	checked: addClass({ backgroundColor: "lightgreen" }, {}),
+	success: addClass({ backgroundColor: "green" }, {}),
+	error: addClass({ backgroundColor: "lightcoral" }, {}),
+	focus: addClass({ backgroundColor: "lightblue" }, {}), // 覆盖
+};
 
 const toolsEl = view("y")
 	.style({ gap: "16px", width: "min(360px, 100vw)", alignItems: "center" })
@@ -476,7 +516,11 @@ button("检查")
 			}),
 		);
 		if (!s) {
-			alert("当前解法与初始题目不符");
+			timeLine.data[timeLine.pointer].state = "error";
+			reRenderTimeLine();
+		} else {
+			timeLine.data[timeLine.pointer].state = "checked";
+			reRenderTimeLine();
 		}
 	})
 	.addInto(toolsEl2);
