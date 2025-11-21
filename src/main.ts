@@ -111,7 +111,7 @@ function setFocus(index: number) {
 
 		if (inputType === "note") {
 			const d = nowData[focusIndex];
-			if (d.type === "note") {
+			if (d?.type === "note") {
 				if (d.notes.includes(i)) {
 					btnEl.style({ backgroundColor: "lightblue" });
 				}
@@ -132,6 +132,7 @@ function setFocus(index: number) {
 function setCellValue(index: number, value: number) {
 	const data = structuredClone(nowData);
 	const currentItem = data[index];
+	if (!currentItem) return;
 	if (currentItem.type === "number") {
 		return;
 	}
@@ -154,6 +155,7 @@ function setCellValue(index: number, value: number) {
 function setCellValueNote(index: number, value: number) {
 	const data = structuredClone(nowData);
 	const currentItem = data[index];
+	if (!currentItem) return;
 	if (currentItem.type === "number") {
 		return;
 	}
