@@ -10,19 +10,22 @@ const hardPuzzle = [
 // https://huggingface.co/datasets/sapientinc/sudoku-extreme
 const file = "test/test.csv";
 
+const results: { step: number; line: number }[] = [];
+
 const f = Deno.readTextFileSync(file);
 const lines = f
 	.split("\n")
+	.map((l, i) => [i + 1, l] as [number, string])
 	.slice(1)
-	.filter((i) => i.trim())
-	.filter((line) => hardPuzzle.some((p) => line.includes(p)))
+	.filter((i) => i[1].trim())
+	.filter((line) => hardPuzzle.some((p) => line[1].includes(p)))
 	.slice(0, 1000);
 let bc = 0;
 const startTime = performance.now();
 let caseCount = 0;
 let okCount = 0;
 for (const line of lines) {
-	const [_, q, aStr] = line.split(",");
+	const [_, q, aStr] = line[1].split(",");
 	const l = q.split("").map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 	const xx = mySolver2(l);
 	bc += xx.branchCount;
@@ -41,11 +44,21 @@ for (const line of lines) {
 		);
 	} else okCount++;
 	caseCount++;
-	console.log(caseCount / lines.length);
+	console.log(caseCount / lines.length, xx.fullLog.length, line[0]);
+	results.push({ step: xx.fullLog.length, line: line[0] });
 }
 const endTime = performance.now();
 console.log(
 	bc / lines.length,
 	(endTime - startTime) / lines.length,
 	okCount / lines.length,
+);
+
+Deno.writeTextFileSync(
+	`test/test_more_result${Date.now()}.csv`,
+	"step,line\n" +
+		results
+			.sort((a, b) => a.step - b.step)
+			.map((i) => `${i.step},${i.line}`)
+			.join("\n"),
 );
