@@ -193,16 +193,15 @@ function setData(data: BoardItem[]) {
 	nowData = structuredClone(data);
 	const x = structuredClone(timeLine.data[timeLine.pointer]);
 	if (dataEq(x.dataList, data)) {
+		reRenderTimeLine();
 		return;
 	}
 
-	if (timeLine.link[timeLine.pointer].length > 0) {
-		for (const next of timeLine.link[timeLine.pointer]) {
-			if (dataEq(data, timeLine.data[next].dataList)) {
-				timeLine.pointer = next;
-				reRenderTimeLine();
-				return;
-			}
+	for (const next of timeLine.link[timeLine.pointer] ?? []) {
+		if (dataEq(data, timeLine.data[next].dataList)) {
+			timeLine.pointer = next;
+			reRenderTimeLine();
+			return;
 		}
 	}
 
