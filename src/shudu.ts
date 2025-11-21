@@ -317,7 +317,7 @@ const s: Record<
 							type: "set",
 							value: Number(k),
 							cellPosi: index,
-							m: `${indexType} ${mainIndex}`,
+							m: `${indexType} ${mainIndex + 1}`,
 						};
 						setValue(board, index, Number(k));
 						return { type: "step", board, log };
@@ -368,7 +368,7 @@ const s: Record<
 								type: "rmNote",
 								value: Number(n),
 								cellPosi: ci,
-								m: `block ${bindex} along x ${xIndex}`,
+								m: `block ${bindex + 1} along x ${xIndex + 1}`,
 							};
 							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
 							return { type: "step", board, log };
@@ -390,7 +390,7 @@ const s: Record<
 								type: "rmNote",
 								value: Number(n),
 								cellPosi: ci,
-								m: `block ${bindex} along y ${yIndex}`,
+								m: `block ${bindex + 1} along y ${yIndex + 1}`,
 							};
 							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
 							return { type: "step", board, log };
@@ -444,7 +444,7 @@ const s: Record<
 									type: "rmNote",
 									value: Number(n),
 									cellPosi: bi,
-									m: `${indexType} ${mainIndex} within block ${bindex}`,
+									m: `${indexType} ${mainIndex + 1} within block ${bindex + 1}`,
 								};
 								board[bi].notes = board[bi].notes.filter(
 									(i) => i !== Number(n),
@@ -494,7 +494,10 @@ const s: Record<
 										type: "rmNote",
 										value: num,
 										cellPosi: index,
-										m: `${indexType} ${n} and ${s.get(lineKey)} along positions ${lineKey}`,
+										m: `${indexType} axis ${n + 1} and ${Number(s.get(lineKey)) + 1} along positions ${lineKey
+											.split(",")
+											.map((i) => Number(i) + 1)
+											.join(",")}`,
 									};
 									board[index].notes = board[index].notes.filter(
 										(i) => i !== num,
