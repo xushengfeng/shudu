@@ -104,6 +104,7 @@ function setCellValue(index: number, value: number) {
 	if (currentItem.type === "number") {
 		return;
 	}
+	if (!currentItem.notes.includes(value)) return;
 	currentItem.value = value;
 	data[index] = currentItem;
 
