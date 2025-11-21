@@ -30,14 +30,8 @@ function setBoard(board: BoardItem[]) {
 			const cellEl = view()
 				.addInto(boxEl)
 				.class(mainClassCell)
-				.on("click", () => {
-					if (
-						item.type === "note" &&
-						item.notes.length === 1 &&
-						item.value === null
-					) {
-						setCellValue(boardIndex, item.notes[0]);
-					} else setFocus(boardIndex);
+				.on("mouseenter", () => {
+					setFocus(boardIndex);
 				})
 				.data({ index: boardIndex.toString() });
 			if (item.type === "number") {
@@ -72,6 +66,20 @@ function setBoard(board: BoardItem[]) {
 						noteGrid.add(nel);
 					}
 				}
+				cellEl.on("click", () => {
+					if (item.notes.length === 1) {
+						setCellValue(boardIndex, item.notes[0]);
+					} else if (holdNum !== null) {
+						if (inputType === "normal") {
+							setCellValue(boardIndex, holdNum);
+						}
+						if (inputType === "note") {
+							setCellValueNote(boardIndex, holdNum);
+						}
+					}
+
+					if (holdNum !== null) highLightCell(holdNum);
+				});
 			} else {
 				cellEl.add("");
 			}
@@ -87,46 +95,6 @@ function setFocus(index: number) {
 	for (const el of boardEl.queryAll(`.${celFocusClass}`))
 		el.el.classList.remove(celFocusClass);
 	boardEl.query(`[data-index="${index}"]`)?.class(celFocusClass);
-
-	inputEl.clear().style({
-		display: "grid",
-		gridTemplateColumns: "repeat(3, 40px)",
-		gridTemplateRows: "repeat(3, 40px)",
-		gap: "5px",
-	});
-
-	for (const i of canNumber) {
-		const btnEl = button()
-			.addInto(inputEl)
-			.style({
-				width: "40px",
-				height: "40px",
-				border: "1px solid gray",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				fontSize: "20px",
-			})
-			.add(String(i));
-
-		if (inputType === "note") {
-			const d = nowData[focusIndex];
-			if (d?.type === "note") {
-				if (d.notes.includes(i)) {
-					btnEl.style({ backgroundColor: "lightblue" });
-				}
-			}
-			btnEl.style({ borderRadius: "50%" });
-			btnEl.on("click", () => {
-				setCellValueNote(focusIndex, i);
-				setFocus(focusIndex);
-			});
-		} else {
-			btnEl.on("click", () => {
-				setCellValue(focusIndex, i);
-			});
-		}
-	}
 }
 
 function setCellValue(index: number, value: number) {
@@ -171,6 +139,17 @@ function setCellValueNote(index: number, value: number) {
 	setData(data);
 
 	checkDataEl(data);
+}
+
+function highLightCell(index: number) {
+	// 高亮显示所有n的单元格
+	for (const cellEl of boardEl.queryAll("[data-n]")) {
+		if (cellEl.el.getAttribute("data-n") === String(index)) {
+			cellEl.el.classList.add(celNumHighlightClass);
+		} else {
+			cellEl.el.classList.remove(celNumHighlightClass);
+		}
+	}
 }
 
 function dataEq(data1: BoardItem[], data2: BoardItem[]) {
@@ -285,6 +264,8 @@ function reRenderTimeLine() {
 	}
 }
 
+let holdNum: (typeof canNumber)[number] | null = null;
+
 function checkDataEl(values: Array<BoardItem>) {
 	const c = fastCheckData(values);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
@@ -322,44 +303,44 @@ function checkDataEl(values: Array<BoardItem>) {
 		reRenderTimeLine();
 	}
 
-	highLightB.clear();
-	const unusedNum = canNumber.flatMap((n) =>
+	updateInput(values);
+}
+
+function updateInput(values: Array<BoardItem>) {
+	const needUseNum = canNumber.flatMap((n) =>
 		values.filter((v) => v.value === n).length === 9 ? [] : [n],
 	);
-	highLightB.add(
-		button("x")
+
+	inputEl.clear().style({
+		display: "grid",
+		gridTemplateColumns: "repeat(3, 40px)",
+		gridTemplateRows: "repeat(3, 40px)",
+		gap: "5px",
+	});
+	for (const i of canNumber) {
+		const btnEl = button()
+			.addInto(inputEl)
 			.style({
-				minWidth: "20px",
+				width: "40px",
+				height: "40px",
 				border: "1px solid gray",
-				borderRadius: "4px",
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				fontSize: "20px",
 			})
-			.on("click", () => {
-				// 取消所有高亮
-				for (const cellEl of boardEl.queryAll("[data-n]")) {
-					cellEl.el.classList.remove(celNumHighlightClass);
-				}
-			}),
-	);
-	for (const n of unusedNum) {
-		highLightB.add(
-			button()
-				.style({
-					minWidth: "20px",
-					border: "1px solid gray",
-					borderRadius: "4px",
-				})
-				.add(String(n))
-				.on("click", () => {
-					// 高亮显示所有n的单元格
-					for (const cellEl of boardEl.queryAll("[data-n]")) {
-						if (cellEl.el.getAttribute("data-n") === String(n)) {
-							cellEl.el.classList.add(celNumHighlightClass);
-						} else {
-							cellEl.el.classList.remove(celNumHighlightClass);
-						}
-					}
-				}),
-		);
+			.add(String(i));
+
+		if (inputType === "note") {
+			btnEl.style({ borderRadius: "50%" });
+		}
+		if (!needUseNum.includes(i)) {
+			btnEl.style({ opacity: "0.3", pointerEvents: "none" });
+		}
+		btnEl.on("click", () => {
+			holdNum = i;
+			highLightCell(i);
+		});
 	}
 }
 
@@ -512,9 +493,6 @@ const toolsEl2 = view("x", "wrap").style({ gap: "16px" }).addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
 	.style({ width: "100%", maxHeight: "60px", overflow: "scroll" });
-const highLightB = view("x")
-	.style({ overflow: "scroll", gap: "4px" })
-	.addInto(toolsEl);
 const textEl = view().addInto(toolsEl);
 
 const toolsEl3 = view("x").style({ gap: "4px" }).addInto(toolsEl);
@@ -530,6 +508,12 @@ button("草稿编辑")
 	.on("click", () => {
 		inputType = "note";
 		setFocus(focusIndex);
+	});
+button("清除高亮")
+	.addInto(toolsEl3)
+	.on("click", () => {
+		highLightCell(-1);
+		holdNum = null;
 	});
 
 const inputEl = view().addInto(toolsEl);
