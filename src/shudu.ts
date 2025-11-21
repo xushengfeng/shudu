@@ -26,6 +26,12 @@ export const strategies = {
 	hiddenPair: {
 		name: "隐藏对",
 	},
+	hiddenTriple: {
+		name: "隐藏三连",
+	},
+	hiddenQuad: {
+		name: "隐藏四连",
+	},
 	pointing: {
 		name: "指向 pointing",
 	},
@@ -262,6 +268,76 @@ function count(o: number[]) {
 	return r;
 }
 
+function hiddenSubset(
+	board: BoardItem[],
+	size: number,
+):
+	| {
+			type: "step";
+			board: BoardItem[];
+			log?: SolverInfo;
+	  }
+	| undefined {
+	// 隐式子集
+	// 以 隐式对为例子
+	// 某对数字只出现在某行某列两个格子里，那格子里的其他数字候选就没有必要了
+	for (const indexType of ["x", "y", "b"] as const) {
+		for (const mainIndex of zeroToNine) {
+			let indices: number[] = [];
+			if (indexType === "x") {
+				indices = zeroToNine.map((i) => mainIndex * 9 + i);
+			}
+			if (indexType === "y") {
+				indices = zeroToNine.map((i) => mainIndex + i * 9);
+			}
+			if (indexType === "b") {
+				indices = blockIndex(mainIndex);
+			}
+			const xv = indices
+				.map((i) => board[i])
+				.flatMap((i) => (i.type === "note" && i.value === null ? i.notes : []));
+			const xx = count(xv);
+			const pairNumbers = Object.entries(xx)
+				.filter(([_, v]) => v === size)
+				.map(([k, _]) => Number(k));
+			if (pairNumbers.length !== size) continue;
+
+			const pairIndices = pairNumbers.map((n) =>
+				indices.filter(
+					(i) =>
+						board[i].type === "note" &&
+						board[i].value === null &&
+						board[i].notes.includes(n),
+				),
+			);
+			if (
+				pairIndices.every((i) => i.length === size) &&
+				pairIndices[0].every((a, i) =>
+					pairIndices.slice(1).every((b) => b[i] === a),
+				)
+			) {
+				// 找到隐藏对
+				for (const pi of pairIndices[0]) {
+					const cell = board[pi];
+					if (cell.type !== "note") continue;
+					const otherNotes = cell.notes.filter((i) => !pairNumbers.includes(i));
+					if (otherNotes.length === 0) continue;
+					const log: SolverInfo = {
+						type: "rmNote",
+						value: otherNotes,
+						cellPosi: pi,
+						m: `${indexType} ${mainIndex + 1} hidden pair ${pairNumbers
+							.map((i) => i.toString())
+							.join(",")}`,
+					};
+					cell.notes = pairNumbers;
+					return { type: "step", board, log };
+				}
+			}
+		}
+	}
+}
+
 const s: Record<
 	keyof typeof strategies,
 	(board: BoardItem[]) =>
@@ -330,67 +406,13 @@ const s: Record<
 		}
 	},
 	hiddenPair: (board) => {
-		// 隐式对
-		// 某对数字只出现在某行某列两个格子里，那格子里的其他数字候选就没有必要了
-		for (const indexType of ["x", "y", "b"] as const) {
-			for (const mainIndex of zeroToNine) {
-				let indices: number[] = [];
-				if (indexType === "x") {
-					indices = zeroToNine.map((i) => mainIndex * 9 + i);
-				}
-				if (indexType === "y") {
-					indices = zeroToNine.map((i) => mainIndex + i * 9);
-				}
-				if (indexType === "b") {
-					indices = blockIndex(mainIndex);
-				}
-				const xv = indices
-					.map((i) => board[i])
-					.flatMap((i) =>
-						i.type === "note" && i.value === null ? i.notes : [],
-					);
-				const xx = count(xv);
-				const pairNumbers = Object.entries(xx)
-					.filter(([_, v]) => v === 2)
-					.map(([k, _]) => Number(k));
-				if (pairNumbers.length !== 2) continue;
-
-				const pairIndices = pairNumbers.map((n) =>
-					indices.filter(
-						(i) =>
-							board[i].type === "note" &&
-							board[i].value === null &&
-							board[i].notes.includes(n),
-					),
-				);
-				if (
-					pairIndices[0].length === 2 &&
-					pairIndices[1].length === 2 &&
-					pairIndices[0][0] === pairIndices[1][0] &&
-					pairIndices[0][1] === pairIndices[1][1]
-				) {
-					// 找到隐藏对
-					for (const pi of pairIndices[0]) {
-						const cell = board[pi];
-						if (cell.type !== "note") continue;
-						const otherNotes = cell.notes.filter(
-							(i) => !pairNumbers.includes(i),
-						);
-						if (otherNotes.length === 0) continue;
-						const log: SolverInfo = {
-							type: "rmNote",
-							value: otherNotes,
-							cellPosi: pi,
-							m: `${indexType} ${mainIndex + 1} hidden pair ${pairNumbers
-								.map((i) => i.toString())
-								.join(",")}`,
-						};
-						cell.notes = pairNumbers;
-						return { type: "step", board, log };
-					}
-				}
-			}
-		}
+		return hiddenSubset(board, 2);
+	},
+	hiddenTriple: (board) => {
+		return hiddenSubset(board, 3);
+	},
+	hiddenQuad: (board) => {
+		return hiddenSubset(board, 4);
 	},
 	pointing: (board) => {
 		// 指向 pointing
@@ -589,6 +611,8 @@ export function mySolver(
 		"pointing",
 		"claiming",
 		"hiddenPair",
+		"hiddenTriple",
+		"hiddenQuad",
 		"xwing",
 	],
 ) {
