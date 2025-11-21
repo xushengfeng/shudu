@@ -1,4 +1,4 @@
-import { analyze, generate, type Difficulty } from "sudoku-core";
+import { getSudoku } from "sudoku-gen";
 import {
 	addClass,
 	button,
@@ -332,12 +332,11 @@ function checkDataEl(values: Array<BoardItem>) {
 	}
 }
 
-function initGame(d: Difficulty) {
-	const ss = generate(d);
+function initGame(d: "easy" | "medium" | "hard" | "expert") {
+	const ss = getSudoku(d)
+		.puzzle.split("")
+		.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 	console.log(ss);
-
-	const x = analyze(ss);
-	console.log(x);
 
 	const a = mySolver(creatBoardItemFromValue(ss));
 	console.log(a);
@@ -508,6 +507,7 @@ button("新建")
 						close();
 					}),
 			);
+			el.add("本地生成");
 			el.add(
 				(
 					[
@@ -515,7 +515,6 @@ button("新建")
 						{ value: "medium", name: "中等" },
 						{ value: "hard", name: "困难" },
 						{ value: "expert", name: "专家" },
-						{ value: "master", name: "大师" },
 					] as const
 				).map((i) =>
 					view()

@@ -16,6 +16,6 @@
     },
     "dependencies": {
         "dkh-ui": "^0.14.2",
-        "sudoku-core": "^3.0.3"
+        "sudoku-gen": "^1.0.2"
     }
 }

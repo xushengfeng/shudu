@@ -11,9 +11,9 @@ importers:
       dkh-ui:
         specifier: ^0.14.2
         version: 0.14.2
-      sudoku-core:
-        specifier: ^3.0.3
-        version: 3.0.3
+      sudoku-gen:
+        specifier: ^1.0.2
+        version: 1.0.2
     devDependencies:
       typescript:
         specifier: ~5.9.3
@@ -443,8 +443,8 @@ packages:
   std-env@3.10.0:
     resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
 
-  sudoku-core@3.0.3:
-    resolution: {integrity: sha512-ZXL+odma0wGtgYXyXDR6+b4+lMiV85d3t7yyqgjlFgM8MaYIKlu8kSEEhcKxYIWd0FYBI41WBIYZLyZOC1Zscw==}
+  sudoku-gen@1.0.2:
+    resolution: {integrity: sha512-zQFQNbar9qGpbteAH7CQShGoR5lk7r4KYlt0Wsvts1eVMzLb2EZUovzc7gAmoHp+HmXGYadmqCyyXoY7QVEyhA==}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -860,7 +860,7 @@ snapshots:
 
   std-env@3.10.0: {}
 
-  sudoku-core@3.0.3: {}
+  sudoku-gen@1.0.2: {}
 
   tinybench@2.9.0: {}
 
