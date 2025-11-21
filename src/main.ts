@@ -84,6 +84,8 @@ function setBoard(board: BoardItem[]) {
 			cellEl.add("");
 		}
 	}
+
+	highLightCell(holdNum ?? -1);
 }
 
 function setFocus(index: number) {
