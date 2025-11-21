@@ -9,7 +9,6 @@ import {
 	type ElType,
 } from "dkh-ui";
 import {
-	blockIndex,
 	type BoardItem,
 	canNumber,
 	creatBoardItemFromValue,
@@ -21,6 +20,7 @@ import {
 
 function setBoard(board: BoardItem[]) {
 	boardEl.clear().class(mainClassBoard);
+	blockEl.clear();
 
 	for (const _ of zeroToNine) {
 		view().addInto(blockEl).class(mainClassBlock);
@@ -270,12 +270,12 @@ let holdNum: (typeof canNumber)[number] | null = null;
 
 function checkDataEl(values: Array<BoardItem>) {
 	const c = fastCheckData(values);
-	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
+	boardPEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	textEl.clear();
 	if (c.type === "success") {
-		boardEl.el.classList.add(boardSuccessClass);
+		boardPEl.el.classList.add(boardSuccessClass);
 	} else if (c.type === "error") {
-		boardEl.el.classList.add(boardErrorClass);
+		boardPEl.el.classList.add(boardErrorClass);
 		view()
 			.add(
 				c.posi.type === "x"
@@ -373,7 +373,7 @@ function initBoard(ss: Array<null | number>) {
 	setBoard(nowData);
 	setData(nowData);
 	setFocus(focusIndex);
-	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
+	boardPEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	checkDataEl(nowData);
 
 	const s = mySolver(nowData);
