@@ -498,8 +498,8 @@ const mainClassCell = addClass(
 const celNumHighlightClass = addClass({ backgroundColor: "yellow" }, {});
 const celFocusClass = addClass({ boxShadow: "inset 0 0 4px yellow" }, {});
 
-const boardSuccessClass = addClass({ boxShadow: "0 0 10px green" }, {});
-const boardErrorClass = addClass({ boxShadow: "0 0 10px red" }, {});
+const boardSuccessClass = addClass({ borderColor: "green !important" }, {});
+const boardErrorClass = addClass({ borderColor: "red !important" }, {});
 
 const timeLineClass = {
 	checked: addClass({ backgroundColor: "lightgreen" }, {}),
