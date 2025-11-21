@@ -5,8 +5,35 @@ export type PosiT = {
 	type: "x" | "y" | "b" | "c";
 	p: number;
 };
+
+export type SolverInfo = {
+	type: "set" | "rmNote";
+	value: number;
+	cellPosi: number;
+	m: string;
+};
+
 export const zeroToNine = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 export const canNumber = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+export const strategies = {
+	singleCandidate: {
+		name: "单个候选数",
+	},
+	uniqueCandidate: {
+		name: "行、列、区块唯一候选数",
+	},
+	pointing: {
+		name: "指向 pointing",
+	},
+	claiming: {
+		name: "Claiming",
+	},
+	xwing: {
+		name: "x-wing",
+	},
+};
+
 export function index2BlockIndex(index: number) {
 	const xIndex = index % 9;
 	const yIndex = Math.floor(index / 9);
@@ -207,64 +234,57 @@ export function fastCheckData(values: Array<BoardItem>):
 	}
 }
 
-export function mySolver2(values: Array<number | null>) {
-	return mySolver(creatBoardItemFromValue(values));
+export function mySolver2(
+	values: Array<number | null>,
+	_strategies?: (keyof typeof strategies)[],
+) {
+	return mySolver(creatBoardItemFromValue(values), _strategies);
 }
 
-export function mySolver(values: Array<BoardItem>) {
-	const boardItems = values;
-
-	const fullLog: string[] = [];
-	let brunchCount = 0;
-
-	let runCount = 0;
-	const maxDeep = 5000;
-
-	function setValue(board: BoardItem[], index: number, v: number) {
-		board[index].value = v;
-		const ni = getNeiIndex(index);
-		for (const x of Object.values(ni))
-			for (const i of x) {
-				const c = board[i];
-				if (c.type === "note") c.notes = c.notes.filter((i) => i !== v);
-			}
-	}
-
-	function count(o: number[]) {
-		const r: Record<number, number> = {};
-		for (const i of o) {
-			r[i] = (r[i] || 0) + 1;
+function setValue(board: BoardItem[], index: number, v: number) {
+	board[index].value = v;
+	const ni = getNeiIndex(index);
+	for (const x of Object.values(ni))
+		for (const i of x) {
+			const c = board[i];
+			if (c.type === "note") c.notes = c.notes.filter((i) => i !== v);
 		}
-		return r;
+}
+
+function count(o: number[]) {
+	const r: Record<number, number> = {};
+	for (const i of o) {
+		r[i] = (r[i] || 0) + 1;
 	}
+	return r;
+}
 
-	function x(
-		board: BoardItem[],
-	):
-		| { type: "error" }
-		| { type: "success"; board: BoardItem[] }
-		| { type: "step"; board: BoardItem[] }
-		| { type: "continue"; board: BoardItem[] } {
-		// logBoard(board);
-
-		const check = fastCheckData(board);
-		if (check.type === "error") {
-			fullLog.push("Error detected during fast check");
-			return { type: "error" };
-		}
-		if (check.type === "success") return { type: "success", board };
-
+const s: Record<
+	keyof typeof strategies,
+	(board: BoardItem[]) =>
+		| {
+				type: "step";
+				board: BoardItem[];
+				log?: SolverInfo;
+		  }
+		| undefined
+> = {
+	singleCandidate: (board) => {
 		// 单个候选数
 		for (const [i, v] of board.entries()) {
 			if (v.type === "note" && v.value === null && v.notes.length === 1) {
-				fullLog.push(
-					`Set value at index ${i} to ${v.notes[0]} based on single candidate`,
-				);
+				const log: SolverInfo = {
+					type: "set",
+					value: v.notes[0],
+					cellPosi: i,
+					m: "",
+				};
 				setValue(board, i, v.notes[0]);
-				return { type: "step", board };
+				return { type: "step", board, log };
 			}
 		}
-
+	},
+	uniqueCandidate: (board) => {
 		// 行、列、区块唯一候选数
 		for (const indexType of ["x", "y", "b"] as const) {
 			for (const mainIndex of zeroToNine) {
@@ -293,16 +313,20 @@ export function mySolver(values: Array<BoardItem>) {
 								board[i].value === null &&
 								board[i].notes.includes(Number(k)),
 						)!;
-						fullLog.push(
-							`Set value at index ${index} to ${k} based on unique candidate in ${indexType} ${mainIndex}`,
-						);
+						const log: SolverInfo = {
+							type: "set",
+							value: Number(k),
+							cellPosi: index,
+							m: `${indexType} ${mainIndex}`,
+						};
 						setValue(board, index, Number(k));
-						return { type: "step", board };
+						return { type: "step", board, log };
 					}
 				}
 			}
 		}
-
+	},
+	pointing: (board) => {
 		// 指向 pointing
 		// 某数字在宫格仅同一行或同一列，延伸过去的其他行列就不能存在这个数字，否个这个宫格会没有数字选择
 		for (const bindex of zeroToNine) {
@@ -340,11 +364,14 @@ export function mySolver(values: Array<BoardItem>) {
 							board[ci].value === null &&
 							board[ci].notes.includes(Number(n))
 						) {
-							fullLog.push(
-								`Remove note ${n} at index ${ci} based on pointing in block ${bindex} along x ${xIndex}`,
-							);
+							const log: SolverInfo = {
+								type: "rmNote",
+								value: Number(n),
+								cellPosi: ci,
+								m: `block ${bindex} along x ${xIndex}`,
+							};
 							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
-							return { type: "step", board };
+							return { type: "step", board, log };
 						}
 					}
 				}
@@ -359,17 +386,21 @@ export function mySolver(values: Array<BoardItem>) {
 							board[ci].value === null &&
 							board[ci].notes.includes(Number(n))
 						) {
-							fullLog.push(
-								`Remove note ${n} at index ${ci} based on pointing in block ${bindex} along y ${yIndex}`,
-							);
+							const log: SolverInfo = {
+								type: "rmNote",
+								value: Number(n),
+								cellPosi: ci,
+								m: `block ${bindex} along y ${yIndex}`,
+							};
 							board[ci].notes = board[ci].notes.filter((i) => i !== Number(n));
-							return { type: "step", board };
+							return { type: "step", board, log };
 						}
 					}
 				}
 			}
 		}
-
+	},
+	claiming: (board) => {
 		// Claiming
 		// 某数字在行或列，且他们仅同一宫格内，宫格内原来可以在其他地方有这个数字的候选，如果其他地方选了候选，宫格排除这个数字，进而导致行列无法填写这个数字
 		for (const indexType of ["x", "y"] as const) {
@@ -409,20 +440,24 @@ export function mySolver(values: Array<BoardItem>) {
 								board[bi].value === null &&
 								board[bi].notes.includes(Number(n))
 							) {
-								fullLog.push(
-									`Remove note ${n} at index ${bi} based on claiming in ${indexType} ${mainIndex} within block ${bindex}`,
-								);
+								const log: SolverInfo = {
+									type: "rmNote",
+									value: Number(n),
+									cellPosi: bi,
+									m: `${indexType} ${mainIndex} within block ${bindex}`,
+								};
 								board[bi].notes = board[bi].notes.filter(
 									(i) => i !== Number(n),
 								);
-								return { type: "step", board };
+								return { type: "step", board, log };
 							}
 						}
 					}
 				}
 			}
 		}
-
+	},
+	xwing: (board) => {
 		// x-wing
 		// 以x为例子，某个数字，在xa行仅有两个候选，在xb行也仅有两个候选，且这两个候选的y列位置相同，那么这两个列位置在其他的同数字候选可以删除
 		// 因为其他位置掩盖了其中一个，另一个位置就必须选择那个数字，导致同一列数字相同
@@ -455,15 +490,16 @@ export function mySolver(values: Array<BoardItem>) {
 									board[index].value === null &&
 									board[index].notes.includes(num)
 								) {
-									fullLog.push(
-										`Remove note ${num} at index ${index} based on x-wing for ${indexType} ${n} and ${s.get(
-											lineKey,
-										)} along positions ${lineKey}`,
-									);
+									const log: SolverInfo = {
+										type: "rmNote",
+										value: num,
+										cellPosi: index,
+										m: `${indexType} ${n} and ${s.get(lineKey)} along positions ${lineKey}`,
+									};
 									board[index].notes = board[index].notes.filter(
 										(i) => i !== num,
 									);
-									return { type: "step", board };
+									return { type: "step", board, log };
 								}
 							}
 						}
@@ -471,6 +507,54 @@ export function mySolver(values: Array<BoardItem>) {
 						s.set(lineKey, n);
 					}
 				}
+			}
+		}
+	},
+};
+
+export function mySolver(
+	values: Array<BoardItem>,
+	_strategies: (keyof typeof strategies)[] = [
+		"singleCandidate",
+		"uniqueCandidate",
+		"pointing",
+		"claiming",
+		"xwing",
+	],
+) {
+	const boardItems = values;
+
+	const fullLog: string[] = [];
+	let brunchCount = 0;
+
+	let runCount = 0;
+	const maxDeep = 5000;
+
+	function x(
+		board: BoardItem[],
+	):
+		| { type: "error" }
+		| { type: "success"; board: BoardItem[] }
+		| { type: "step"; board: BoardItem[] }
+		| { type: "continue"; board: BoardItem[] } {
+		const check = fastCheckData(board);
+		if (check.type === "error") {
+			fullLog.push("Error detected during fast check");
+			return { type: "error" };
+		}
+		if (check.type === "success") return { type: "success", board };
+
+		for (const strategyName of _strategies) {
+			const res = s[strategyName](board);
+			if (res) {
+				fullLog.push(
+					`${strategyName}# ${
+						res.log
+							? `${res.log.type} ${res.log.value} at ${(res.log.cellPosi % 9) + 1},${Math.floor(res.log.cellPosi / 9) + 1} ${res.log.m}`
+							: ""
+					}`,
+				);
+				return res;
 			}
 		}
 
