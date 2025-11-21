@@ -88,6 +88,38 @@ test("宫格消除 Claiming", () => {
 		expect(i.join("")).toBe(x.a[0]);
 	}
 });
+test("隐藏对", () => {
+	const l: { q: string; a: string[] }[] = [
+		{
+			q: "293417685000002010701058020000000109019000802004001000107080206002106008008720301",
+			a: [
+				"293417685485962713761358924876245139519673842324891567137584296952136478648729351",
+			],
+		},
+	];
+	for (const x of l) {
+		const l = x.q
+			.split("")
+			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
+		const xx = mySolver2(l, [
+			"singleCandidate",
+			"uniqueCandidate",
+			"hiddenPair",
+		]);
+
+		console.log(
+			xx.fullLog.length,
+			xx.branchCount,
+			new Set(
+				xx.fullLog.map((i) =>
+					"strategyName" in i ? i.strategyName : "unknown",
+				),
+			).values(),
+		);
+		const i = xx.board[0];
+		expect(i.join("")).toBe(x.a[0]);
+	}
+});
 
 test("xwing", () => {
 	const l: { q: string; a: string[] }[] = [

@@ -8,7 +8,7 @@ export type PosiT = {
 
 export type SolverInfo = {
 	type: "set" | "rmNote";
-	value: number;
+	value: number[];
 	cellPosi: number;
 	m: string;
 };
@@ -22,6 +22,9 @@ export const strategies = {
 	},
 	uniqueCandidate: {
 		name: "行、列、区块唯一候选数",
+	},
+	hiddenPair: {
+		name: "隐藏对",
 	},
 	pointing: {
 		name: "指向 pointing",
@@ -275,7 +278,7 @@ const s: Record<
 			if (v.type === "note" && v.value === null && v.notes.length === 1) {
 				const log: SolverInfo = {
 					type: "set",
-					value: v.notes[0],
+					value: [v.notes[0]],
 					cellPosi: i,
 					m: "",
 				};
@@ -315,11 +318,74 @@ const s: Record<
 						)!;
 						const log: SolverInfo = {
 							type: "set",
-							value: Number(k),
+							value: [Number(k)],
 							cellPosi: index,
 							m: `${indexType} ${mainIndex + 1}`,
 						};
 						setValue(board, index, Number(k));
+						return { type: "step", board, log };
+					}
+				}
+			}
+		}
+	},
+	hiddenPair: (board) => {
+		// 隐式对
+		// 某对数字只出现在某行某列两个格子里，那格子里的其他数字候选就没有必要了
+		for (const indexType of ["x", "y", "b"] as const) {
+			for (const mainIndex of zeroToNine) {
+				let indices: number[] = [];
+				if (indexType === "x") {
+					indices = zeroToNine.map((i) => mainIndex * 9 + i);
+				}
+				if (indexType === "y") {
+					indices = zeroToNine.map((i) => mainIndex + i * 9);
+				}
+				if (indexType === "b") {
+					indices = blockIndex(mainIndex);
+				}
+				const xv = indices
+					.map((i) => board[i])
+					.flatMap((i) =>
+						i.type === "note" && i.value === null ? i.notes : [],
+					);
+				const xx = count(xv);
+				const pairNumbers = Object.entries(xx)
+					.filter(([_, v]) => v === 2)
+					.map(([k, _]) => Number(k));
+				if (pairNumbers.length !== 2) continue;
+
+				const pairIndices = pairNumbers.map((n) =>
+					indices.filter(
+						(i) =>
+							board[i].type === "note" &&
+							board[i].value === null &&
+							board[i].notes.includes(n),
+					),
+				);
+				if (
+					pairIndices[0].length === 2 &&
+					pairIndices[1].length === 2 &&
+					pairIndices[0][0] === pairIndices[1][0] &&
+					pairIndices[0][1] === pairIndices[1][1]
+				) {
+					// 找到隐藏对
+					for (const pi of pairIndices[0]) {
+						const cell = board[pi];
+						if (cell.type !== "note") continue;
+						const otherNotes = cell.notes.filter(
+							(i) => !pairNumbers.includes(i),
+						);
+						if (otherNotes.length === 0) continue;
+						const log: SolverInfo = {
+							type: "rmNote",
+							value: otherNotes,
+							cellPosi: pi,
+							m: `${indexType} ${mainIndex + 1} hidden pair ${pairNumbers
+								.map((i) => i.toString())
+								.join(",")}`,
+						};
+						cell.notes = pairNumbers;
 						return { type: "step", board, log };
 					}
 				}
@@ -366,7 +432,7 @@ const s: Record<
 						) {
 							const log: SolverInfo = {
 								type: "rmNote",
-								value: Number(n),
+								value: [Number(n)],
 								cellPosi: ci,
 								m: `block ${bindex + 1} along x ${xIndex + 1}`,
 							};
@@ -388,7 +454,7 @@ const s: Record<
 						) {
 							const log: SolverInfo = {
 								type: "rmNote",
-								value: Number(n),
+								value: [Number(n)],
 								cellPosi: ci,
 								m: `block ${bindex + 1} along y ${yIndex + 1}`,
 							};
@@ -442,7 +508,7 @@ const s: Record<
 							) {
 								const log: SolverInfo = {
 									type: "rmNote",
-									value: Number(n),
+									value: [Number(n)],
 									cellPosi: bi,
 									m: `${indexType} ${mainIndex + 1} within block ${bindex + 1}`,
 								};
@@ -492,7 +558,7 @@ const s: Record<
 								) {
 									const log: SolverInfo = {
 										type: "rmNote",
-										value: num,
+										value: [num],
 										cellPosi: index,
 										m: `${indexType} axis ${n + 1} and ${Number(s.get(lineKey)) + 1} along positions ${lineKey
 											.split(",")
@@ -522,6 +588,7 @@ export function mySolver(
 		"uniqueCandidate",
 		"pointing",
 		"claiming",
+		"hiddenPair",
 		"xwing",
 	],
 ) {
@@ -627,7 +694,7 @@ export function mySolver(
 								strategyName: "tryNumber",
 								log: {
 									type: "set",
-									value: cell.notes[i],
+									value: [cell.notes[i]],
 									cellPosi: maxCell,
 									m: "",
 								},

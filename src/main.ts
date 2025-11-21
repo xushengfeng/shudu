@@ -629,7 +629,7 @@ button("提示")
 			if ("strategyName" in tip) {
 				const t = `${tip.strategyName}# ${
 					tip.log
-						? `${tip.log.type} ${tip.log.value} at ${(tip.log.cellPosi % 9) + 1},${Math.floor(tip.log.cellPosi / 9) + 1} ${tip.log.m}`
+						? `${tip.log.type} ${tip.log.value.join(",")} at ${(tip.log.cellPosi % 9) + 1},${Math.floor(tip.log.cellPosi / 9) + 1} ${tip.log.m}`
 						: ""
 				}`;
 				textEl.clear().add(t);
