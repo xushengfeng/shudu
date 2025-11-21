@@ -171,10 +171,39 @@ function setCellValueNote(index: number, value: number) {
 	checkDataEl(data);
 }
 
+function dataEq(data1: BoardItem[], data2: BoardItem[]) {
+	return data1.every((v, i) => {
+		const n = data2[i];
+		if (n.type === "note" && v.type === "note") {
+			if (n.value === v.value) {
+				if (n.value === null) {
+					return n.notes.sort().join() === v.notes.sort().join();
+				} else return true;
+			}
+			return false;
+		} else if (n.type === "number" && v.type === "number") {
+			return n.value === v.value;
+		} else return false;
+	});
+}
+
 function setData(data: BoardItem[]) {
 	nowData = structuredClone(data);
-	// const x = timeLine.data[timeLine.pointer];
-	// todo eq
+	const x = structuredClone(timeLine.data[timeLine.pointer]);
+	if (dataEq(x.dataList, data)) {
+		return;
+	}
+
+	if (timeLine.link[timeLine.pointer].length > 0) {
+		for (const next of timeLine.link[timeLine.pointer]) {
+			if (dataEq(data, timeLine.data[next].dataList)) {
+				timeLine.pointer = next;
+				reRenderTimeLine();
+				return;
+			}
+		}
+	}
+
 	const nid = crypto.randomUUID().slice(0, 8);
 	timeLine.data[nid] = {
 		dataList: structuredClone(data),
