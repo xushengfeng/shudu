@@ -359,6 +359,23 @@ function initBoard(ss: Array<null | number>) {
 	setFocus(focusIndex);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	checkDataEl(nowData);
+
+	const s = mySolver(nowData);
+	solverData = [];
+	const tip: string[] = [];
+	if (s.board.length === 0) {
+		tip.push("无解数独");
+	} else if (s.board.length > 1) {
+		tip.push("多解数独");
+	} else {
+		solverData = structuredClone(s.board);
+	}
+	if (s.branchCount > 0) {
+		tip.push("需要猜测");
+	}
+	if (tip.length > 0) {
+		textEl.add(tip.join("，"));
+	}
 }
 
 async function showDialog<T>(
@@ -384,6 +401,7 @@ async function showDialog<T>(
 }
 
 let nowData: BoardItem[] = [];
+let solverData: number[][] = [];
 let focusIndex: number = -1;
 let inputType: "normal" | "note" = "normal";
 const timeLine: {
@@ -580,9 +598,8 @@ button("检查")
 		if (!init) return;
 		const r = mySolver(init);
 		console.log(r);
-		const s = r.board.some((a) =>
+		const s = solverData.some((a) =>
 			a.every((v, i) => {
-				if (v === null) return true;
 				if (nowData[i].value === null && nowData[i].type === "note") {
 					return nowData[i].notes.includes(v);
 				}
@@ -605,13 +622,11 @@ button("答案")
 		if (!init) return;
 		const r = mySolver(init);
 		console.log(r);
-		if (r.board.length === 0) {
+		if (solverData.length === 0) {
 			textEl.clear().add("无解");
 			return;
 		}
-		nowData = creatBoardItemFromValue(
-			r.board[0].map((i) => (i === null ? null : i)),
-		);
+		nowData = creatBoardItemFromValue(solverData[0]);
 		setBoard(nowData);
 		setData(nowData);
 		setFocus(focusIndex);
