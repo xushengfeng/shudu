@@ -1,5 +1,13 @@
 import { analyze, generate, type Difficulty } from "sudoku-core";
-import { addClass, button, initDKH, select, view, type ElType } from "dkh-ui";
+import {
+	addClass,
+	button,
+	ele,
+	initDKH,
+	input,
+	view,
+	type ElType,
+} from "dkh-ui";
 import {
 	blockIndex,
 	type BoardItem,
@@ -249,7 +257,7 @@ function reRenderTimeLine() {
 function checkDataEl(values: Array<BoardItem>) {
 	const c = fastCheckData(values);
 	boardEl.el.classList.remove(boardSuccessClass, boardErrorClass);
-	errorTextEl.clear();
+	textEl.clear();
 	if (c.type === "success") {
 		boardEl.el.classList.add(boardSuccessClass);
 	} else if (c.type === "error") {
@@ -264,13 +272,13 @@ function checkDataEl(values: Array<BoardItem>) {
 							? `${c.posi.p + 1}宫`
 							: `${(c.posi.p % 9) + 1},${Math.floor(c.posi.p / 9) + 1}格`,
 			)
-			.addInto(errorTextEl);
+			.addInto(textEl);
 		if (c.errorType === "empty") {
-			errorTextEl.add("空的候选");
+			textEl.add("空的候选");
 		} else if (c.errorType === "less") {
-			errorTextEl.add(`缺少数字: ${c.n.join(", ")}`);
+			textEl.add(`缺少数字: ${c.n.join(", ")}`);
 		} else if (c.errorType === "more") {
-			errorTextEl.add(`多余数字: ${c.n.join(", ")}`);
+			textEl.add(`多余数字: ${c.n.join(", ")}`);
 		}
 	}
 
@@ -354,6 +362,28 @@ function initBoard(ss: Array<null | number>) {
 	checkDataEl(nowData);
 }
 
+async function showDialog<T>(
+	cb: (
+		el: ElType<HTMLDialogElement>,
+		close: () => void,
+		data: (d: T) => void,
+	) => void,
+): Promise<T> {
+	const p = Promise.withResolvers<T>();
+	const el = ele("dialog").addInto();
+	el.el.showModal();
+	cb(
+		el,
+		() => {
+			el.remove();
+		},
+		(data) => {
+			p.resolve(data);
+		},
+	);
+	return p.promise;
+}
+
 let nowData: BoardItem[] = [];
 let focusIndex: number = -1;
 let inputType: "normal" | "note" = "normal";
@@ -434,7 +464,10 @@ const toolsEl2 = view("x", "wrap").style({ gap: "16px" }).addInto(toolsEl);
 const timeLineEl = view()
 	.addInto(toolsEl)
 	.style({ width: "100%", maxHeight: "60px", overflow: "scroll" });
-const errorTextEl = view().addInto(toolsEl);
+const highLightB = view("x")
+	.style({ overflow: "scroll", gap: "4px" })
+	.addInto(toolsEl);
+const textEl = view().addInto(toolsEl);
 
 const toolsEl3 = view("x").style({ gap: "4px" }).addInto(toolsEl);
 
@@ -454,49 +487,91 @@ button("草稿编辑")
 const inputEl = view().addInto(toolsEl);
 
 button("新建")
-	.on("click", () => {
-		initGame(selectX.gv);
+	.on("click", async () => {
+		showDialog((dialog, close) => {
+			const el = view("y")
+				.style({ padding: "16px", gap: "8px" })
+				.addInto(dialog);
+			el.add(
+				view()
+					.add("空")
+					.on("click", () => {
+						initBoard(new Array(81).fill(null));
+						close();
+					}),
+			).add(
+				view()
+					.add("当前作为初始盘面")
+					.on("click", () => {
+						const data = nowData.map((i) => i.value);
+						initBoard(data);
+						close();
+					}),
+			);
+			el.add(
+				(
+					[
+						{ value: "easy", name: "简单" },
+						{ value: "medium", name: "中等" },
+						{ value: "hard", name: "困难" },
+						{ value: "expert", name: "专家" },
+						{ value: "master", name: "大师" },
+					] as const
+				).map((i) =>
+					view()
+						.add(i.name)
+						.on("click", () => {
+							initGame(i.value);
+							close();
+						}),
+				),
+			);
+			el.add(
+				button("x").on("click", () => {
+					close();
+				}),
+			);
+		});
 	})
 	.addInto(toolsEl2);
-const selectX = select<Difficulty>([
-	{ value: "easy", name: "简单" },
-	{ value: "medium", name: "中等" },
-	{ value: "hard", name: "困难" },
-	{ value: "expert", name: "专家" },
-	{ value: "master", name: "大师" },
-]);
 
-selectX.addInto(toolsEl2);
+button("导入导出")
+	.on("click", () => {
+		showDialog((dialog, close) => {
+			const el = view("y")
+				.style({ padding: "16px", gap: "8px" })
+				.addInto(dialog);
+			const initState = input().sv(
+				timeLine.data[0].dataList
+					.map((i) => (i.value === null ? 0 : i.value))
+					.join(""),
+			);
+			const nowState = input().sv(
+				nowData.map((i) => (i.value === null ? 0 : i.value)).join(""),
+			);
 
-button("导入")
-	.on("click", () => {
-		const p = prompt();
-		if (p?.length !== 81) return;
-		const ss = p
-			.split("")
-			.map((c) => ("1" <= c && c <= "9" ? Number(c) : null));
-		initBoard(ss);
-	})
-	.addInto(toolsEl2);
-button("导出")
-	.on("click", () => {
-		prompt(
-			undefined,
-			nowData.map((i) => (i.value === null ? 0 : i.value)).join(""),
-		);
-	})
-	.addInto(toolsEl2);
-
-button("空")
-	.on("click", () => {
-		initBoard(new Array(81).fill(null));
-	})
-	.addInto(toolsEl2);
-
-button("当前作为初始")
-	.on("click", () => {
-		const data = nowData.map((i) => i.value);
-		initBoard(data);
+			el.add(
+				view().add([
+					"初始盘面",
+					initState,
+					button("设置").on("click", () => {
+						const p = initState.gv;
+						if (p?.length !== 81) return;
+						const ss = p
+							.split("")
+							.map((c) => ("1" <= c && c <= "9" ? Number(c) : null));
+						initBoard(ss);
+						close();
+					}),
+				]),
+			)
+				.add(view().add(["当前盘面", nowState]))
+				.add(
+					button("x").on("click", () => {
+						close();
+					}),
+				);
+		});
 	})
 	.addInto(toolsEl2);
 
@@ -525,12 +600,32 @@ button("检查")
 	})
 	.addInto(toolsEl2);
 
+button("答案")
+	.on("click", () => {
+		const init = timeLine.data[0]?.dataList;
+		if (!init) return;
+		const r = mySolver(init);
+		console.log(r);
+		if (r.board.length === 0) {
+			textEl.clear().add("无解");
+			return;
+		}
+		nowData = creatBoardItemFromValue(
+			r.board[0].map((i) => (i === null ? null : i)),
+		);
+		setBoard(nowData);
+		setData(nowData);
+		setFocus(focusIndex);
+		checkDataEl(nowData);
+	})
+	.addInto(toolsEl2);
+
 button("提示")
 	.on("click", () => {
 		const r = mySolver(nowData);
 		console.log(r);
 		const tip = r.fullLog.at(0);
-		if (tip === undefined) alert("没有提示");
+		if (tip === undefined) textEl.clear().add("没有提示");
 		else {
 			if ("strategyName" in tip) {
 				const t = `${tip.strategyName}# ${
@@ -538,14 +633,10 @@ button("提示")
 						? `${tip.log.type} ${tip.log.value} at ${(tip.log.cellPosi % 9) + 1},${Math.floor(tip.log.cellPosi / 9) + 1} ${tip.log.m}`
 						: ""
 				}`;
-				alert(t);
+				textEl.clear().add(t);
 			}
 		}
 	})
-	.addInto(toolsEl2);
-
-const highLightB = view("x")
-	.style({ overflow: "scroll", gap: "4px" })
 	.addInto(toolsEl2);
 
 initDKH({ pureStyle: true });
