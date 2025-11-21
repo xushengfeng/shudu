@@ -22,67 +22,66 @@ import {
 function setBoard(board: BoardItem[]) {
 	boardEl.clear().class(mainClassBoard);
 
-	for (const mainIndex of zeroToNine) {
-		const boxEl = view().addInto(boardEl).class(mainClassBlock);
-		for (const boxIndex of zeroToNine) {
-			const boardIndex = blockIndex(mainIndex)[boxIndex];
-			const item = board[boardIndex];
-			const cellEl = view()
-				.addInto(boxEl)
-				.class(mainClassCell)
-				.on("mouseenter", () => {
-					setFocus(boardIndex);
-				})
-				.data({ index: boardIndex.toString() });
-			if (item.type === "number") {
+	for (const _ of zeroToNine) {
+		view().addInto(blockEl).class(mainClassBlock);
+	}
+
+	for (const [boardIndex, item] of board.entries()) {
+		const cellEl = view()
+			.addInto(boardEl)
+			.class(mainClassCell)
+			.on("mouseenter", () => {
+				setFocus(boardIndex);
+			})
+			.data({ index: boardIndex.toString() });
+		if (item.type === "number") {
+			cellEl.add(String(item.value)).data({ n: item.value.toString() });
+		} else if (item.type === "note") {
+			if (item.value !== null) {
 				cellEl.add(String(item.value)).data({ n: item.value.toString() });
-			} else if (item.type === "note") {
-				if (item.value !== null) {
-					cellEl.add(String(item.value)).data({ n: item.value.toString() });
-				} else {
-					const noteGrid = view()
+			} else {
+				const noteGrid = view()
+					.style({
+						display: "grid",
+						gridTemplateColumns: "repeat(3, 1fr)",
+						gridTemplateRows: "repeat(3, 1fr)",
+						width: "100%",
+						height: "100%",
+						fontSize: "10px",
+						lineHeight: "10px",
+						color: "#666",
+					})
+					.addInto(cellEl);
+				for (const i of canNumber) {
+					const nel = view()
+						.add(item.notes.includes(i) ? String(i) : undefined)
 						.style({
-							display: "grid",
-							gridTemplateColumns: "repeat(3, 1fr)",
-							gridTemplateRows: "repeat(3, 1fr)",
-							width: "100%",
-							height: "100%",
-							fontSize: "10px",
-							lineHeight: "10px",
-							color: "#666",
-						})
-						.addInto(cellEl);
-					for (const i of canNumber) {
-						const nel = view()
-							.add(item.notes.includes(i) ? String(i) : undefined)
-							.style({
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							});
-						if (item.notes.includes(i)) {
-							nel.data({ n: String(i) });
-						}
-						noteGrid.add(nel);
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+						});
+					if (item.notes.includes(i)) {
+						nel.data({ n: String(i) });
+					}
+					noteGrid.add(nel);
+				}
+			}
+			cellEl.on("click", () => {
+				if (item.notes.length === 1) {
+					setCellValue(boardIndex, item.notes[0]);
+				} else if (holdNum !== null) {
+					if (inputType === "normal") {
+						setCellValue(boardIndex, holdNum);
+					}
+					if (inputType === "note") {
+						setCellValueNote(boardIndex, holdNum);
 					}
 				}
-				cellEl.on("click", () => {
-					if (item.notes.length === 1) {
-						setCellValue(boardIndex, item.notes[0]);
-					} else if (holdNum !== null) {
-						if (inputType === "normal") {
-							setCellValue(boardIndex, holdNum);
-						}
-						if (inputType === "note") {
-							setCellValueNote(boardIndex, holdNum);
-						}
-					}
 
-					if (holdNum !== null) highLightCell(holdNum);
-				});
-			} else {
-				cellEl.add("");
-			}
+				if (holdNum !== null) highLightCell(holdNum);
+			});
+		} else {
+			cellEl.add("");
 		}
 	}
 }
@@ -334,6 +333,8 @@ function updateInput(values: Array<BoardItem>) {
 
 		if (inputType === "note") {
 			btnEl.style({ borderRadius: "50%" });
+		} else {
+			btnEl.style({ borderRadius: "8px" });
 		}
 		if (!needUseNum.includes(i)) {
 			btnEl.style({ opacity: "0.3", pointerEvents: "none" });
@@ -439,13 +440,32 @@ const appEl = view("x", "wrap").addInto().style({
 	gap: "16px",
 });
 
-const boardEl = view().addInto(appEl);
+const boardPEl = view()
+	.style({
+		position: "relative",
+		overflow: "hidden",
+		border: "2px solid black",
+		borderRadius: "8px",
+	})
+	.addInto(appEl);
+const boardEl = view().addInto(boardPEl);
+const blockEl = view().addInto(boardPEl).style({
+	position: "absolute",
+	display: "grid",
+	gridTemplateColumns: "repeat(3, 1fr)",
+	gridTemplateRows: "repeat(3, 1fr)",
+	top: "0",
+	left: "0",
+	width: "100%",
+	height: "100%",
+	pointerEvents: "none",
+});
 
 const mainClassBoard = addClass(
 	{
 		display: "grid",
-		gridTemplateColumns: "repeat(3, 1fr)",
-		gridTemplateRows: "repeat(3, 1fr)",
+		gridTemplateColumns: "repeat(9, 1fr)",
+		gridTemplateRows: "repeat(9, 1fr)",
 		gap: "0px",
 		width: "min(calc(100vw - 16px), 360px)",
 		height: "min(calc(100vw - 16px), 360px)",
@@ -455,7 +475,7 @@ const mainClassBoard = addClass(
 );
 const mainClassBlock = addClass(
 	{
-		border: "1px solid gray",
+		outline: "1px solid black",
 		display: "grid",
 		gridTemplateColumns: "repeat(3, 1fr)",
 		gridTemplateRows: "repeat(3, 1fr)",
@@ -464,7 +484,7 @@ const mainClassBlock = addClass(
 );
 const mainClassCell = addClass(
 	{
-		border: "1px solid lightgray",
+		outline: "0.5px solid lightgray",
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
