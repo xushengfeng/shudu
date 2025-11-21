@@ -25,15 +25,21 @@ function setBoard(board: BoardItem[]) {
 	for (const mainIndex of zeroToNine) {
 		const boxEl = view().addInto(boardEl).class(mainClassBlock);
 		for (const boxIndex of zeroToNine) {
+			const boardIndex = blockIndex(mainIndex)[boxIndex];
+			const item = board[boardIndex];
 			const cellEl = view()
 				.addInto(boxEl)
 				.class(mainClassCell)
 				.on("click", () => {
-					setFocus(blockIndex(mainIndex)[boxIndex]);
+					if (
+						item.type === "note" &&
+						item.notes.length === 1 &&
+						item.value === null
+					) {
+						setCellValue(boardIndex, item.notes[0]);
+					} else setFocus(boardIndex);
 				})
-				.data({ index: blockIndex(mainIndex)[boxIndex].toString() });
-			const boardIndex = blockIndex(mainIndex)[boxIndex];
-			const item = board[boardIndex];
+				.data({ index: boardIndex.toString() });
 			if (item.type === "number") {
 				cellEl.add(String(item.value)).data({ n: item.value.toString() });
 			} else if (item.type === "note") {
@@ -64,11 +70,6 @@ function setBoard(board: BoardItem[]) {
 							nel.data({ n: String(i) });
 						}
 						noteGrid.add(nel);
-					}
-					if (item.notes.length === 1) {
-						noteGrid.on("dblclick", () => {
-							setCellValue(boardIndex, item.notes[0]);
-						});
 					}
 				}
 			} else {
