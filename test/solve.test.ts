@@ -53,7 +53,7 @@ test("solve", () => {
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver2(l);
 		console.log("thinking", x.q);
-		console.log(xx.fullLog.length, xx.brunchCount);
+		console.log(xx.fullLog.length, xx.branchCount);
 		expect(xx.board.length).eq(x.a.length);
 
 		for (const i of xx.board) {
@@ -82,7 +82,7 @@ test("宫格消除 Claiming", () => {
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver2(l);
 
-		console.log(xx.fullLog.length, xx.brunchCount);
+		console.log(xx.fullLog.length, xx.branchCount);
 
 		const i = xx.board[0];
 		expect(i.join("")).toBe(x.a[0]);
@@ -104,7 +104,7 @@ test("xwing", () => {
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver2(l);
 
-		console.log(xx.fullLog.length, xx.brunchCount);
+		console.log(xx.fullLog.length, xx.branchCount);
 		const i = xx.board[0];
 		expect(i.join("")).toBe(x.a[0]);
 	}

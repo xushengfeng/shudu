@@ -25,7 +25,7 @@ for (const line of lines) {
 	const [_, q, aStr] = line.split(",");
 	const l = q.split("").map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 	const xx = mySolver2(l);
-	bc += xx.brunchCount;
+	bc += xx.branchCount;
 	if (xx.board.length === 0) {
 		console.log("no solution:", q);
 		continue;

@@ -525,10 +525,10 @@ export function mySolver(
 	const boardItems = values;
 
 	const fullLog: string[] = [];
-	let brunchCount = 0;
+	let branchCount = 0;
 
 	let runCount = 0;
-	const maxDeep = 5000;
+	const maxDeep = 10000;
 
 	function x(
 		board: BoardItem[],
@@ -582,22 +582,44 @@ export function mySolver(
 			}
 			if (res.type === "continue") {
 				// 暴力求解
-				b: for (let noteCount = 2; noteCount <= 9; noteCount++) {
+				// 对某个格分类讨论
+				// 顺便考虑多解
+				const notes = res.board.flatMap((i) =>
+					i.type === "note" && i.value === null ? i.notes : [],
+				);
+				const c = count(notes);
+				for (let noteCount = 2; noteCount <= 9; noteCount++) {
+					let maxCell = -1;
+					let maxScore = 0;
 					for (const [index, v] of res.board.entries()) {
-						if (v.type === "note" && v.value === null) {
-							if (v.notes.length === noteCount) {
-								for (let i = 0; i < noteCount; i++) {
-									const b = structuredClone(res.board);
-									fullLog.push(
-										`Set value at index ${index} to ${v.notes[i]} based on brute force`,
-									);
-									brunchCount++;
-									setValue(b, index, v.notes[i]);
-									stack.push({ board: b });
-								}
-								break b;
+						if (
+							v.type === "note" &&
+							v.value === null &&
+							v.notes.length === noteCount
+						) {
+							const score = v.notes.reduce(
+								(acc, cur) => acc + (c[cur] ?? 0),
+								0,
+							);
+							if (score > maxScore) {
+								maxScore = score;
+								maxCell = index;
 							}
 						}
+					}
+					if (maxCell !== -1) {
+						const cell = res.board[maxCell];
+						if (cell.type !== "note") continue;
+						for (let i = 0; i < cell.notes.length; i++) {
+							const b = structuredClone(res.board);
+							fullLog.push(
+								`bruteForce# Set value at index ${maxCell} to ${cell.notes[i]}`,
+							);
+							branchCount++;
+							setValue(b, maxCell, cell.notes[i]);
+							stack.push({ board: b });
+						}
+						break;
 					}
 				}
 			}
@@ -614,6 +636,6 @@ export function mySolver(
 	return {
 		board: bo,
 		fullLog,
-		brunchCount,
+		branchCount,
 	};
 }
