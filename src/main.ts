@@ -501,13 +501,13 @@ button("普通输入")
 	.addInto(toolsEl3)
 	.on("click", () => {
 		inputType = "normal";
-		setFocus(focusIndex);
+		updateInput(nowData);
 	});
 button("草稿编辑")
 	.addInto(toolsEl3)
 	.on("click", () => {
 		inputType = "note";
-		setFocus(focusIndex);
+		updateInput(nowData);
 	});
 button("清除高亮")
 	.addInto(toolsEl3)
