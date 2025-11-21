@@ -524,7 +524,15 @@ export function mySolver(
 ) {
 	const boardItems = values;
 
-	const fullLog: string[] = [];
+	const fullLog: (
+		| {
+				strategyName: keyof typeof strategies | "tryNumber";
+				log?: SolverInfo;
+		  }
+		| {
+				state: "error" | "success";
+		  }
+	)[] = [];
 	let branchCount = 0;
 
 	let runCount = 0;
@@ -539,21 +547,21 @@ export function mySolver(
 		| { type: "continue"; board: BoardItem[] } {
 		const check = fastCheckData(board);
 		if (check.type === "error") {
-			fullLog.push("Error detected during fast check");
+			fullLog.push({ state: "error" });
 			return { type: "error" };
 		}
-		if (check.type === "success") return { type: "success", board };
+		if (check.type === "success") {
+			fullLog.push({ state: "success" });
+			return { type: "success", board };
+		}
 
 		for (const strategyName of _strategies) {
 			const res = s[strategyName](board);
 			if (res) {
-				fullLog.push(
-					`${strategyName}# ${
-						res.log
-							? `${res.log.type} ${res.log.value} at ${(res.log.cellPosi % 9) + 1},${Math.floor(res.log.cellPosi / 9) + 1} ${res.log.m}`
-							: ""
-					}`,
-				);
+				fullLog.push({
+					strategyName,
+					log: res.log,
+				});
 				return res;
 			}
 		}
@@ -612,9 +620,15 @@ export function mySolver(
 						if (cell.type !== "note") continue;
 						for (let i = 0; i < cell.notes.length; i++) {
 							const b = structuredClone(res.board);
-							fullLog.push(
-								`bruteForce# Set value at index ${maxCell} to ${cell.notes[i]}`,
-							);
+							fullLog.push({
+								strategyName: "tryNumber",
+								log: {
+									type: "set",
+									value: cell.notes[i],
+									cellPosi: maxCell,
+									m: "",
+								},
+							});
 							branchCount++;
 							setValue(b, maxCell, cell.notes[i]);
 							stack.push({ board: b });

@@ -529,7 +529,18 @@ button("提示")
 	.on("click", () => {
 		const r = mySolver(nowData);
 		console.log(r);
-		// todo
+		const tip = r.fullLog.at(0);
+		if (tip === undefined) alert("没有提示");
+		else {
+			if ("strategyName" in tip) {
+				const t = `${tip.strategyName}# ${
+					tip.log
+						? `${tip.log.type} ${tip.log.value} at ${(tip.log.cellPosi % 9) + 1},${Math.floor(tip.log.cellPosi / 9) + 1} ${tip.log.m}`
+						: ""
+				}`;
+				alert(t);
+			}
+		}
 	})
 	.addInto(toolsEl2);
 
