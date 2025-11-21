@@ -1,4 +1,4 @@
-import { analyze, generate, hint, solve, type Difficulty } from "sudoku-core";
+import { analyze, generate, type Difficulty } from "sudoku-core";
 import { addClass, button, initDKH, select, view, type ElType } from "dkh-ui";
 import {
 	blockIndex,
@@ -305,10 +305,7 @@ function initGame(d: Difficulty) {
 	const x = analyze(ss);
 	console.log(x);
 
-	const xx = hint(ss);
-	console.log(xx);
-
-	const a = mySolver(ss);
+	const a = mySolver(creatBoardItemFromValue(ss));
 	console.log(a);
 
 	initBoard(ss);
@@ -467,8 +464,7 @@ button("检查")
 	.on("click", () => {
 		const init = timeLine.data[0]?.dataList;
 		if (!init) return;
-		const l = init.map((i) => i.value);
-		const r = mySolver(l);
+		const r = mySolver(init);
 		console.log(r);
 		const s = r.board.some((a) =>
 			a.every((v, i) => {
@@ -487,7 +483,7 @@ button("检查")
 
 button("提示")
 	.on("click", () => {
-		const r = mySolver(nowData.map((i) => i.value));
+		const r = mySolver(nowData);
 		console.log(r);
 		// todo
 	})

@@ -207,8 +207,12 @@ export function fastCheckData(values: Array<BoardItem>):
 	}
 }
 
-export function mySolver(values: Array<number | null>) {
-	const boardItems = creatBoardItemFromValue(values);
+export function mySolver2(values: Array<number | null>) {
+	return mySolver(creatBoardItemFromValue(values));
+}
+
+export function mySolver(values: Array<BoardItem>) {
+	const boardItems = values;
 
 	const fullLog: string[] = [];
 	let brunchCount = 0;

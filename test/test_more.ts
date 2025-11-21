@@ -1,4 +1,4 @@
-import { mySolver } from "../src/shudu.ts";
+import { mySolver2 } from "../src/shudu.ts";
 
 const hardPuzzle = [
 	"puzzles3_magictour_top1465",
@@ -24,7 +24,7 @@ let okCount = 0;
 for (const line of lines) {
 	const [_, q, aStr] = line.split(",");
 	const l = q.split("").map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
-	const xx = mySolver(l);
+	const xx = mySolver2(l);
 	bc += xx.brunchCount;
 	if (xx.board.length === 0) {
 		console.log("no solution:", q);

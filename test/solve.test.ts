@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { mySolver } from "../src/shudu.ts";
+import { mySolver2 } from "../src/shudu.ts";
 
 const l: { q: string; a: string[] }[] = [
 	{
@@ -51,7 +51,7 @@ test("solve", () => {
 		const l = x.q
 			.split("")
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
-		const xx = mySolver(l);
+		const xx = mySolver2(l);
 		console.log("thinking", x.q);
 		console.log(xx.fullLog.length, xx.brunchCount);
 		expect(xx.board.length).eq(x.a.length);
@@ -80,7 +80,7 @@ test("宫格消除 Claiming", () => {
 		const l = x.q
 			.split("")
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
-		const xx = mySolver(l);
+		const xx = mySolver2(l);
 
 		console.log(xx.fullLog.length, xx.brunchCount);
 
@@ -102,7 +102,7 @@ test("xwing", () => {
 		const l = x.q
 			.split("")
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
-		const xx = mySolver(l);
+		const xx = mySolver2(l);
 
 		console.log(xx.fullLog.length, xx.brunchCount);
 		const i = xx.board[0];
