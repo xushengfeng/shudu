@@ -348,15 +348,18 @@ function updateInput(values: Array<BoardItem>) {
 }
 
 function initGame(d: "easy" | "medium" | "hard" | "expert") {
-	const ss = getSudoku(d)
-		.puzzle.split("")
-		.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
-	console.log(ss);
+	for (let i = 0; i < 1000; i++) {
+		const ss = getSudoku(d)
+			.puzzle.split("")
+			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 
-	const a = mySolver(creatBoardItemFromValue(ss));
-	console.log(a);
+		const a = mySolver(creatBoardItemFromValue(ss));
+		if (a.branchCount > 0) continue;
+		console.log(i);
 
-	initBoard(ss);
+		initBoard(ss);
+		break;
+	}
 }
 
 function initBoard(ss: Array<null | number>) {
