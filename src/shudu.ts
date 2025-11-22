@@ -268,6 +268,26 @@ function count(o: number[]) {
 	return r;
 }
 
+function combinations<T>(array: T[], size: number): T[][] {
+	const result: T[][] = [];
+
+	function combine(start: number, current: T[]) {
+		if (current.length === size) {
+			result.push([...current]);
+			return;
+		}
+
+		for (let i = start; i < array.length; i++) {
+			current.push(array[i]);
+			combine(i + 1, current);
+			current.pop();
+		}
+	}
+
+	combine(0, []);
+	return result;
+}
+
 function hiddenSubset(
 	board: BoardItem[],
 	size: number,
@@ -300,38 +320,44 @@ function hiddenSubset(
 			const pairNumbers = Object.entries(xx)
 				.filter(([_, v]) => v === size)
 				.map(([k, _]) => Number(k));
-			if (pairNumbers.length !== size) continue;
+			if (pairNumbers.length < size) continue;
 
-			const pairIndices = pairNumbers.map((n) =>
-				indices.filter(
+			const pairIndices = pairNumbers.map((n) => ({
+				num: n,
+				indexes: indices.filter(
 					(i) =>
 						board[i].type === "note" &&
 						board[i].value === null &&
 						board[i].notes.includes(n),
 				),
-			);
-			if (
-				pairIndices.every((i) => i.length === size) &&
-				pairIndices[0].every((a, i) =>
-					pairIndices.slice(1).every((b) => b[i] === a),
-				)
-			) {
-				// 找到隐藏对
-				for (const pi of pairIndices[0]) {
-					const cell = board[pi];
-					if (cell.type !== "note") continue;
-					const otherNotes = cell.notes.filter((i) => !pairNumbers.includes(i));
-					if (otherNotes.length === 0) continue;
-					const log: SolverInfo = {
-						type: "rmNote",
-						value: otherNotes,
-						cellPosi: pi,
-						m: `${indexType} ${mainIndex + 1} hidden pair ${pairNumbers
-							.map((i) => i.toString())
-							.join(",")}`,
-					};
-					cell.notes = pairNumbers;
-					return { type: "step", board, log };
+			}));
+			const everyP: Array<Array<{ num: number; indexes: number[] }>> =
+				combinations(pairIndices, size);
+
+			for (const p of everyP) {
+				if (
+					p[0].indexes.every((a, i) =>
+						p.slice(1).every((b) => b.indexes[i] === a),
+					)
+				) {
+					// 找到隐藏对
+					const pNum = p.map((i) => i.num);
+					for (const pi of p[0].indexes) {
+						const cell = board[pi];
+						if (cell.type !== "note") continue;
+						const otherNotes = cell.notes.filter((i) => !pNum.includes(i));
+						if (otherNotes.length === 0) continue;
+						const log: SolverInfo = {
+							type: "rmNote",
+							value: otherNotes,
+							cellPosi: pi,
+							m: `${indexType} ${mainIndex + 1} hidden pair ${pNum
+								.map((i) => i.toString())
+								.join(",")}`,
+						};
+						cell.notes = pNum;
+						return { type: "step", board, log };
+					}
 				}
 			}
 		}
