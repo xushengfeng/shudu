@@ -10,7 +10,7 @@ const hardPuzzle = [
 // https://huggingface.co/datasets/sapientinc/sudoku-extreme
 const file = "test/test.csv";
 
-const results: { step: number; line: number }[] = [];
+const results: { step: number; try: number; line: number }[] = [];
 
 const f = Deno.readTextFileSync(file);
 const lines = f
@@ -45,7 +45,7 @@ for (const line of lines) {
 	} else okCount++;
 	caseCount++;
 	console.log(caseCount / lines.length, xx.fullLog.length, line[0]);
-	results.push({ step: xx.fullLog.length, line: line[0] });
+	results.push({ step: xx.fullLog.length, try: xx.branchCount, line: line[0] });
 }
 const endTime = performance.now();
 console.log(
@@ -56,9 +56,6 @@ console.log(
 
 Deno.writeTextFileSync(
 	`test/test_more_result${Date.now()}.csv`,
-	"step,line\n" +
-		results
-			.sort((a, b) => a.step - b.step)
-			.map((i) => `${i.step},${i.line}`)
-			.join("\n"),
+	"step,try,line\n" +
+		results.map((i) => `${i.step},${i.try},${i.line}`).join("\n"),
 );
