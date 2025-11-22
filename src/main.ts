@@ -91,8 +91,6 @@ function setBoard(board: BoardItem[]) {
 function setFocus(index: number) {
 	focusIndex = index;
 
-	console.log("f", index);
-
 	for (const el of boardEl.queryAll(`.${celFocusClass}`))
 		el.el.classList.remove(celFocusClass);
 	boardEl.query(`[data-index="${index}"]`)?.class(celFocusClass);
