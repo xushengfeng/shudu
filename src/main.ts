@@ -366,7 +366,11 @@ function initBoard(ss: Array<null | number>, check = true) {
 	nowData = [];
 	focusIndex = -1;
 
-	nowData = creatBoardItemFromValue(ss);
+	initBoardRaw(creatBoardItemFromValue(ss), check);
+}
+
+function initBoardRaw(data: BoardItem[], check = true) {
+	nowData = data;
 
 	timeLine.data = { 0: { dataList: nowData, focusIndex: focusIndex } };
 	timeLine.link = { 0: [] };
@@ -607,6 +611,7 @@ button("导入导出")
 			const nowState = input().sv(
 				nowData.map((i) => (i.value === null ? 0 : i.value)).join(""),
 			);
+			const xState = input().sv(JSON.stringify(nowData));
 
 			el.add(
 				view().add([
@@ -624,6 +629,23 @@ button("导入导出")
 				]),
 			)
 				.add(view().add(["当前盘面", nowState]))
+				.add(
+					view().add([
+						"当前盘面(JSON)",
+						xState,
+						button("设置").on("click", () => {
+							const p = xState.gv;
+							if (!p) return;
+							try {
+								const d = JSON.parse(p);
+								initBoardRaw(d, false);
+								close();
+							} catch {
+								return;
+							}
+						}),
+					]),
+				)
 				.add(
 					button("x").on("click", () => {
 						close();
