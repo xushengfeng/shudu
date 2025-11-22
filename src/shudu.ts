@@ -335,11 +335,7 @@ function hiddenSubset(
 				combinations(pairIndices, size);
 
 			for (const p of everyP) {
-				if (
-					p[0].indexes.every((a, i) =>
-						p.slice(1).every((b) => b.indexes[i] === a),
-					)
-				) {
+				if (new Set(p.flatMap((i) => i.indexes)).size === size) {
 					// 找到隐藏对
 					const pNum = p.map((i) => i.num);
 					for (const pi of p[0].indexes) {
@@ -355,7 +351,7 @@ function hiddenSubset(
 								.map((i) => i.toString())
 								.join(",")}`,
 						};
-						cell.notes = pNum;
+						cell.notes = cell.notes.filter((i) => pNum.includes(i));
 						return { type: "step", board, log };
 					}
 				}
