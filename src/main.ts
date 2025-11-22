@@ -5,6 +5,7 @@ import {
 	ele,
 	initDKH,
 	input,
+	p,
 	view,
 	type ElType,
 } from "dkh-ui";
@@ -652,12 +653,48 @@ button("检查")
 	})
 	.addInto(toolsEl2);
 
-button("答案")
+button("分析")
 	.on("click", () => {
 		const init = timeLine.data[0]?.dataList;
 		if (!init) return;
 		const r = mySolver(init);
 		console.log(r);
+
+		const n = mySolver(nowData);
+
+		showDialog((el, close) => {
+			const xel = view("y").addInto(el);
+			xel.add(p("可能用到的策略"));
+			xel.add(
+				Array.from(
+					new Set(
+						r.fullLog.flatMap((i) =>
+							"strategyName" in i ? i.strategyName : [],
+						),
+					),
+				).join(", "),
+			);
+			xel.add(p("当前需要的策略"));
+			xel.add(
+				Array.from(
+					new Set(
+						n.fullLog.flatMap((i) =>
+							"strategyName" in i ? i.strategyName : [],
+						),
+					),
+				).join(", "),
+			);
+			xel.add(
+				button("x").on("click", () => {
+					close();
+				}),
+			);
+		});
+	})
+	.addInto(toolsEl2);
+
+button("答案")
+	.on("click", () => {
 		if (solverData.length === 0) {
 			textEl.clear().add("无解");
 			return;
