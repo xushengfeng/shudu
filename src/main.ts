@@ -362,7 +362,7 @@ function initGame(d: "easy" | "medium" | "hard" | "expert") {
 	}
 }
 
-function initBoard(ss: Array<null | number>) {
+function initBoard(ss: Array<null | number>, check = true) {
 	nowData = [];
 	focusIndex = -1;
 
@@ -378,8 +378,9 @@ function initBoard(ss: Array<null | number>) {
 	boardPEl.el.classList.remove(boardSuccessClass, boardErrorClass);
 	checkDataEl(nowData);
 
-	const s = mySolver(nowData);
 	solverData = [];
+	if (!check) return;
+	const s = mySolver(nowData);
 	const tip: string[] = [];
 	if (s.board.length === 0) {
 		tip.push("无解数独");
@@ -553,7 +554,7 @@ button("新建")
 				view()
 					.add("空")
 					.on("click", () => {
-						initBoard(new Array(81).fill(null));
+						initBoard(new Array(81).fill(null), false);
 						close();
 					}),
 			).add(
