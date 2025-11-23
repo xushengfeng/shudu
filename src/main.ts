@@ -620,11 +620,19 @@ button("导入导出")
 					"初始盘面",
 					initState,
 					button("设置").on("click", () => {
-						const p = initState.gv;
-						if (p?.length !== 81) return;
-						const ss = p
-							.split("")
-							.map((c) => ("1" <= c && c <= "9" ? Number(c) : null));
+						const p = initState.gv.split("");
+						const num = p.filter((c) => "1" <= c && c <= "9");
+						const blankCount = 81 - num.length;
+						let blank = "0";
+						const c = Object.groupBy(p, (c) => c);
+						for (const [k, v] of Object.entries(c)) {
+							if (v?.length === blankCount) {
+								blank = k;
+							}
+						}
+						const ss = p.flatMap((c) =>
+							c === blank ? null : "1" <= c && c <= "9" ? Number(c) : [],
+						);
 						initBoard(ss);
 						close();
 					}),
