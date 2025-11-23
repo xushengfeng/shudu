@@ -149,7 +149,44 @@ test("xwing", () => {
 			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
 		const xx = mySolver2(l);
 
-		console.log(xx.fullLog.length, xx.branchCount);
+		console.log(
+			xx.fullLog.length,
+			xx.branchCount,
+			new Set(
+				xx.fullLog.map((i) =>
+					"strategyName" in i ? i.strategyName : "unknown",
+				),
+			).values(),
+		);
+		const i = xx.board[0];
+		expect(i.join("")).toBe(x.a[0]);
+	}
+});
+
+test("xywing", () => {
+	const l: { q: string; a: string[] }[] = [
+		{
+			q: "094087000008000090321050487900148256482070139165090874816720045000060708000800060",
+			a: [
+				"694387521758412693321956487973148256482675139165293874816729345239564718547831962",
+			],
+		},
+	];
+	for (const x of l) {
+		const l = x.q
+			.split("")
+			.map((i) => ("1" <= i && i <= "9" ? Number(i) : null));
+		const xx = mySolver2(l);
+
+		console.log(
+			xx.fullLog.length,
+			xx.branchCount,
+			new Set(
+				xx.fullLog.map((i) =>
+					"strategyName" in i ? i.strategyName : "unknown",
+				),
+			).values(),
+		);
 		const i = xx.board[0];
 		expect(i.join("")).toBe(x.a[0]);
 	}

@@ -6,6 +6,14 @@ export type PosiT = {
 	p: number;
 };
 
+type StepResult =
+	| {
+			type: "step";
+			board: BoardItem[];
+			log?: SolverInfo;
+	  }
+	| undefined;
+
 export type SolverInfo = {
 	type: "set" | "rmNote";
 	value: number[];
@@ -40,6 +48,15 @@ export const strategies = {
 	},
 	xwing: {
 		name: "x-wing",
+	},
+	xywing: {
+		name: "xy-wing",
+	},
+	wxywing: {
+		name: "不完全 wxyz-wing",
+	},
+	vwxywing: {
+		name: "不完全 vwxyz-wing",
 	},
 };
 
@@ -260,6 +277,10 @@ function setValue(board: BoardItem[], index: number, v: number) {
 		}
 }
 
+function indexXY(index: number) {
+	return `${(index % 9) + 1},${Math.floor(index / 9) + 1}`;
+}
+
 function count(o: number[]) {
 	const r: Record<number, number> = {};
 	for (const i of o) {
@@ -288,16 +309,7 @@ function combinations<T>(array: T[], size: number): T[][] {
 	return result;
 }
 
-function hiddenSubset(
-	board: BoardItem[],
-	size: number,
-):
-	| {
-			type: "step";
-			board: BoardItem[];
-			log?: SolverInfo;
-	  }
-	| undefined {
+function hiddenSubset(board: BoardItem[], size: number): StepResult {
 	// 隐式子集
 	// 以 隐式对为例子
 	// 某对数字只出现在某行某列两个格子里，那格子里的其他数字候选就没有必要了
@@ -359,17 +371,79 @@ function hiddenSubset(
 		}
 	}
 }
+/**
+ * xy(z) wxy(z) vwxy(z)
+ * 对于枢纽，无论他选择什么数字，都会影响翼格（同house且size为2的格子），至少有一个翼格会选择z
+ * 所有翼格house交集的格子，都不能选择z
+ * 也就是无论枢纽选择什么数字，都会影响翼格，进而导致某些格子无论什么情况都不能选择z
+ */
+function xyWing(board: BoardItem[], size = 2, z = false): StepResult {
+	for (const [index, bi] of board.entries()) {
+		if (!(bi.type === "note" && bi.value === null)) continue;
+		// x用来表示枢纽吧
+		const xSize = size + (z ? 1 : 0);
+		if (bi.notes.length !== xSize) continue;
+		const house = Array.from(new Set(Object.values(getNeiIndex(index)).flat()))
+			.filter((i) => i !== index)
+			.flatMap((i) =>
+				board[i].type === "note" &&
+				board[i].value === null &&
+				board[i].notes.length === 2 &&
+				(z === true
+					? board[i].notes.every((n) => bi.notes.includes(n))
+					: board[i].notes.some((n) => bi.notes.includes(n)))
+					? { index: i, notes: board[i].notes }
+					: [],
+			);
+		if (!z) {
+			const zs = Object.groupBy(
+				house,
+				(i) => i.notes.find((x) => !bi.notes.includes(x)) ?? 0,
+			);
+			for (const [Z, _wings] of Object.entries(zs)) {
+				if (Z === "0") continue;
+				if (_wings === undefined) continue;
+				if (_wings.length < size) continue;
+				for (const wings of combinations(_wings, size)) {
+					// biome-ignore lint/style/noNonNullAssertion: size>=2，所以一定找到不是z的
+					const xNum = wings.map((i) => i.notes.find((i) => i !== Number(Z))!);
+					if (new Set(xNum).size !== size) continue;
+					const xx = new Set<number>();
+					for (const i of wings) {
+						const h = getNeiIndex(i.index);
+						const all = Object.values(h).flat();
+						if (xx.size === 0) {
+							for (const i of all) xx.add(i);
+						} else {
+							for (const i of xx) if (!all.includes(i)) xx.delete(i);
+						}
+					}
+					for (const xIndex of xx) {
+						if (
+							wings.find((i) => i.index === xIndex) === undefined &&
+							board[xIndex].type === "note" &&
+							board[xIndex].value === null &&
+							board[xIndex].notes.includes(Number(Z))
+						) {
+							board[xIndex].notes = board[xIndex].notes.filter(
+								(i) => i !== Number(Z),
+							);
+							const log: SolverInfo = {
+								type: "rmNote",
+								cellPosi: xIndex,
+								value: [Number(Z)],
+								m: `what ever ${indexXY(index)} select, one of ${wings.map((i) => indexXY(i.index)).join(",")} will select ${Z}`,
+							};
+							return { type: "step", board, log };
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
-const s: Record<
-	keyof typeof strategies,
-	(board: BoardItem[]) =>
-		| {
-				type: "step";
-				board: BoardItem[];
-				log?: SolverInfo;
-		  }
-		| undefined
-> = {
+const s: Record<keyof typeof strategies, (board: BoardItem[]) => StepResult> = {
 	singleCandidate: (board) => {
 		// 单个候选数
 		for (const [i, v] of board.entries()) {
@@ -623,6 +697,10 @@ const s: Record<
 			}
 		}
 	},
+	xywing: (board) => xyWing(board, 2),
+	// 不完全wxyz-wing
+	wxywing: (board) => xyWing(board, 3),
+	vwxywing: (board) => xyWing(board, 4),
 };
 
 export function mySolver(
@@ -636,6 +714,9 @@ export function mySolver(
 		"hiddenTriple",
 		"hiddenQuad",
 		"xwing",
+		"xywing",
+		"wxywing",
+		"vwxywing",
 	],
 ) {
 	const boardItems = values;
