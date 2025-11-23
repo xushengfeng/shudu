@@ -21,4 +21,5 @@ web 版在线玩 [shuduku](https://shuduku.netlify.app/)
 -   claiming 反 pointing，宫消除
 -   x-wing
 -   xy-wing wxy-wing vwxy-wing
+-   xyz-wing wxyz-wing vwxyz-wing
 -   回溯暴力计算

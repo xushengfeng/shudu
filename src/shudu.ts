@@ -58,6 +58,15 @@ export const strategies = {
 	vwxywing: {
 		name: "不完全 vwxyz-wing",
 	},
+	xyzwing: {
+		name: "xyz-wing",
+	},
+	wxyzwing: {
+		name: "wxyz-wing",
+	},
+	vwxyzwing: {
+		name: "vwxyz-wing",
+	},
 };
 
 export function index2BlockIndex(index: number) {
@@ -376,6 +385,7 @@ function hiddenSubset(board: BoardItem[], size: number): StepResult {
  * 对于枢纽，无论他选择什么数字，都会影响翼格（同house且size为2的格子），至少有一个翼格会选择z
  * 所有翼格house交集的格子，都不能选择z
  * 也就是无论枢纽选择什么数字，都会影响翼格，进而导致某些格子无论什么情况都不能选择z
+ * 如果枢纽有z，还要考虑枢纽选择z的情况，意味着上面的交集还要加上枢纽的house
  */
 function xyWing(board: BoardItem[], size = 2, z = false): StepResult {
 	for (const [index, bi] of board.entries()) {
@@ -395,47 +405,65 @@ function xyWing(board: BoardItem[], size = 2, z = false): StepResult {
 					? { index: i, notes: board[i].notes }
 					: [],
 			);
+		let zs: Partial<
+			Record<
+				number,
+				{
+					index: number;
+					notes: number[];
+				}[]
+			>
+		> = {};
 		if (!z) {
-			const zs = Object.groupBy(
+			zs = Object.groupBy(
 				house,
 				(i) => i.notes.find((x) => !bi.notes.includes(x)) ?? 0,
 			);
-			for (const [Z, _wings] of Object.entries(zs)) {
-				if (Z === "0") continue;
-				if (_wings === undefined) continue;
-				if (_wings.length < size) continue;
-				for (const wings of combinations(_wings, size)) {
-					// biome-ignore lint/style/noNonNullAssertion: size>=2，所以一定找到不是z的
-					const xNum = wings.map((i) => i.notes.find((i) => i !== Number(Z))!);
-					if (new Set(xNum).size !== size) continue;
-					const xx = new Set<number>();
-					for (const i of wings) {
-						const h = getNeiIndex(i.index);
-						const all = Object.values(h).flat();
-						if (xx.size === 0) {
-							for (const i of all) xx.add(i);
-						} else {
-							for (const i of xx) if (!all.includes(i)) xx.delete(i);
-						}
+		} else {
+			for (const maybeZ of bi.notes) {
+				const x = house.filter((i) => i.notes.includes(maybeZ));
+				zs[maybeZ] = x;
+			}
+		}
+		for (const [Z, _wings] of Object.entries(zs)) {
+			if (Z === "0") continue;
+			if (_wings === undefined) continue;
+			if (_wings.length < size) continue;
+			for (const wings of combinations(_wings, size)) {
+				// biome-ignore lint/style/noNonNullAssertion: size>=2，所以一定找到不是z的
+				const xNum = wings.map((i) => i.notes.find((i) => i !== Number(Z))!);
+				if (new Set(xNum).size !== size) continue;
+				const xx = new Set<number>();
+				const w = wings.map((i) => i.index).concat(z ? [index] : []);
+				for (const i of w) {
+					const h = getNeiIndex(i);
+					const all = Object.values(h)
+						.flat()
+						.filter((ii) => ii !== i);
+					if (xx.size === 0) {
+						for (const i of all) xx.add(i);
+					} else {
+						for (const i of xx) if (!all.includes(i)) xx.delete(i);
 					}
-					for (const xIndex of xx) {
-						if (
-							wings.find((i) => i.index === xIndex) === undefined &&
-							board[xIndex].type === "note" &&
-							board[xIndex].value === null &&
-							board[xIndex].notes.includes(Number(Z))
-						) {
-							board[xIndex].notes = board[xIndex].notes.filter(
-								(i) => i !== Number(Z),
-							);
-							const log: SolverInfo = {
-								type: "rmNote",
-								cellPosi: xIndex,
-								value: [Number(Z)],
-								m: `what ever ${indexXY(index)} select, one of ${wings.map((i) => indexXY(i.index)).join(",")} will select ${Z}`,
-							};
-							return { type: "step", board, log };
-						}
+				}
+				for (const xIndex of xx) {
+					if (xIndex === index) continue;
+					if (
+						wings.find((i) => i.index === xIndex) === undefined &&
+						board[xIndex].type === "note" &&
+						board[xIndex].value === null &&
+						board[xIndex].notes.includes(Number(Z))
+					) {
+						board[xIndex].notes = board[xIndex].notes.filter(
+							(i) => i !== Number(Z),
+						);
+						const log: SolverInfo = {
+							type: "rmNote",
+							cellPosi: xIndex,
+							value: [Number(Z)],
+							m: `what ever ${indexXY(index)} select, one of ${wings.map((i) => indexXY(i.index)).join(",")} will select ${Z}`,
+						};
+						return { type: "step", board, log };
 					}
 				}
 			}
@@ -701,6 +729,9 @@ const s: Record<keyof typeof strategies, (board: BoardItem[]) => StepResult> = {
 	// 不完全wxyz-wing
 	wxywing: (board) => xyWing(board, 3),
 	vwxywing: (board) => xyWing(board, 4),
+	xyzwing: (board) => xyWing(board, 2, true),
+	wxyzwing: (board) => xyWing(board, 3, true),
+	vwxyzwing: (board) => xyWing(board, 4, true),
 };
 
 export function mySolver(
@@ -715,8 +746,11 @@ export function mySolver(
 		"hiddenQuad",
 		"xwing",
 		"xywing",
+		"xyzwing",
 		"wxywing",
+		"wxyzwing",
 		"vwxywing",
+		"vwxyzwing",
 	],
 ) {
 	const boardItems = values;
