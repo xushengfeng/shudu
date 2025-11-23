@@ -207,12 +207,13 @@ function reRenderTimeLine() {
 	>();
 	function renderNode(id: string) {
 		const nodeP = view("x").style({ gap: "4px" });
-		const nodeEl = view().style({
-			width: "16px",
-			height: "16px",
-			border: "1px solid gray",
-			borderRadius: "50%",
-		});
+		const nodeEl = view()
+			.style({
+				width: "16px",
+				height: "16px",
+				border: "1px solid gray",
+			})
+			.class(timeLineClass.normal);
 		if (timeLine.data[id].state === "success") {
 			nodeEl.class(timeLineClass.success);
 		} else if (timeLine.data[id].state === "error") {
@@ -509,10 +510,11 @@ const boardSuccessClass = addClass({ borderColor: "green !important" }, {});
 const boardErrorClass = addClass({ borderColor: "red !important" }, {});
 
 const timeLineClass = {
+	normal: addClass({ borderRadius: "50%" }, {}),
 	checked: addClass({ backgroundColor: "lightgreen" }, {}),
 	success: addClass({ backgroundColor: "green" }, {}),
 	error: addClass({ backgroundColor: "lightcoral" }, {}),
-	focus: addClass({ backgroundColor: "lightblue" }, {}), // 覆盖
+	focus: addClass({ borderRadius: "4px" }, {}), // 覆盖
 };
 
 const toolsEl = view("y")
