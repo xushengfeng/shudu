@@ -18,6 +18,7 @@ export interface SolveResult {
 	rootId: number; // 操作树的根节点（初始盘面）
 	nodes: Map<number, OperationNode>; // 所有节点映射，便于快速查找
 	solutionIds: number[];
+	conflictIds: number[];
 	stopBy: "finish" | "maxSteps";
 }
 
@@ -49,6 +50,7 @@ export async function v(board: Array<BoardItem>): Promise<SolveResult> {
 
 	// ----- 统计用 -----
 	const solutionIds: number[] = [];
+	const conflictIds: number[] = [];
 
 	// ----- 创建节点 -----
 	function createNode(
@@ -108,7 +110,8 @@ export async function v(board: Array<BoardItem>): Promise<SolveResult> {
 		const checkResult = fastCheckData(currentBoard);
 		if (checkResult.type === "error") {
 			// 创建冲突节点，传入operation信息
-			createNode(parentId, currentBoard, operation, true, false);
+			const node = createNode(parentId, currentBoard, operation, true, false);
+			conflictIds.push(node.id);
 			return;
 		}
 
@@ -177,6 +180,7 @@ export async function v(board: Array<BoardItem>): Promise<SolveResult> {
 				rootId: rootNode!.id,
 				nodes,
 				solutionIds,
+				conflictIds,
 				stopBy: "maxSteps",
 			};
 		}
@@ -187,8 +191,28 @@ export async function v(board: Array<BoardItem>): Promise<SolveResult> {
 		rootId: rootNode!.id,
 		nodes,
 		solutionIds,
+		conflictIds,
 		stopBy: "finish",
 	};
 
 	return result;
+}
+
+export function findTreePath(
+	nodes: Map<number, OperationNode>,
+	startId: number,
+	endId: number,
+) {
+	const path: number[] = [];
+	let currentId = endId;
+	while (currentId !== startId) {
+		path.push(currentId);
+		const currentNode = nodes.get(currentId);
+		if (!currentNode) {
+			throw new Error(`节点 ${currentId} 不存在`);
+		}
+		currentId = currentNode.parentId;
+	}
+	path.push(startId);
+	return path.reverse();
 }

@@ -18,6 +18,7 @@ import {
 	mySolver,
 	zeroToNine,
 } from "./shudu";
+import { v } from "./v";
 
 function setBoard(board: BoardItem[]) {
 	boardEl.clear().class(mainClassBoard);
@@ -199,7 +200,10 @@ function setData(data: BoardItem[]) {
 	reRenderTimeLine();
 }
 
-function reRenderTimeLine() {
+function reRenderTimeLine(_timeLine = structuredClone(timeLine)) {
+	const timeLine = _timeLine;
+	console.log(timeLine);
+
 	timeLineEl.clear();
 	const els = new Map<
 		string,
@@ -759,6 +763,37 @@ button("提示")
 				textEl.clear().add(t);
 			}
 		}
+	})
+	.addInto(toolsEl2);
+
+button("暴力分析")
+	.on("click", async () => {
+		const data = timeLine.data[0]?.dataList;
+		if (!data) return;
+		const r = await v(data);
+		console.log(r);
+		const nTimeLine: typeof timeLine = {
+			data: {},
+			link: {},
+			pointer: "0",
+		};
+		for (const [id, node] of r.nodes.entries()) {
+			nTimeLine.data[id] = {
+				dataList: creatBoardItemFromValue(node.board),
+				focusIndex: -1,
+				state: node.isConflict
+					? "error"
+					: node.isSolution
+						? "success"
+						: undefined,
+			};
+			nTimeLine.link[id] = node.children.map((i) => String(i));
+		}
+		timeLine.data = nTimeLine.data;
+		timeLine.link = nTimeLine.link;
+		timeLine.pointer = "0";
+		reRenderTimeLine(nTimeLine);
+		textEl.clear().add(`评分 ${r.nodes.size / 10}`);
 	})
 	.addInto(toolsEl2);
 
