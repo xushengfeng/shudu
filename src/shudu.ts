@@ -276,8 +276,18 @@ export function mySolver2(
 	return mySolver(creatBoardItemFromValue(values), _strategies);
 }
 
-function setValue(board: BoardItem[], index: number, v: number) {
+export function setValue(board: BoardItem[], index: number, v: number) {
 	board[index].value = v;
+	const ni = getNeiIndex(index);
+	for (const x of Object.values(ni))
+		for (const i of x) {
+			const c = board[i];
+			if (c.type === "note") c.notes = c.notes.filter((i) => i !== v);
+		}
+}
+
+export function setValue2(board: BoardItem[], index: number, v: number) {
+	board[index] = { type: "number", value: v };
 	const ni = getNeiIndex(index);
 	for (const x of Object.values(ni))
 		for (const i of x) {
