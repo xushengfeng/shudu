@@ -201,9 +201,6 @@ function setData(data: BoardItem[]) {
 }
 
 function reRenderTimeLine(_timeLine = structuredClone(timeLine)) {
-	const timeLine = _timeLine;
-	console.log(timeLine);
-
 	timeLineEl.clear();
 	const els = new Map<
 		string,
@@ -218,14 +215,14 @@ function reRenderTimeLine(_timeLine = structuredClone(timeLine)) {
 				border: "1px solid gray",
 			})
 			.class(timeLineClass.normal);
-		if (timeLine.data[id].state === "success") {
+		if (_timeLine.data[id].state === "success") {
 			nodeEl.class(timeLineClass.success);
-		} else if (timeLine.data[id].state === "error") {
+		} else if (_timeLine.data[id].state === "error") {
 			nodeEl.class(timeLineClass.error);
-		} else if (timeLine.data[id].state === "checked") {
+		} else if (_timeLine.data[id].state === "checked") {
 			nodeEl.class(timeLineClass.checked);
 		}
-		if (timeLine.pointer === id) nodeEl.class(timeLineClass.focus);
+		if (_timeLine.pointer === id) nodeEl.class(timeLineClass.focus);
 		const c = view("y").style({ gap: "4px" });
 		els.set(id, { main: nodeP, childrenWarp: c });
 		nodeP.add([nodeEl, c]);
@@ -251,14 +248,14 @@ function reRenderTimeLine(_timeLine = structuredClone(timeLine)) {
 		// biome-ignore lint/style/noNonNullAssertion: >0
 		const cid = todo.shift()!;
 		renderNode(cid);
-		const children = timeLine.link[cid] ?? [];
+		const children = _timeLine.link[cid] ?? [];
 		for (const ch of children) {
 			todo.push(ch);
 		}
 	}
 	for (const [id, elObj] of els) {
 		if (id === "0") timeLineEl.add(elObj.main);
-		for (const childId of timeLine.link[id] ?? []) {
+		for (const childId of _timeLine.link[id] ?? []) {
 			const childElObj = els.get(childId);
 			if (childElObj) {
 				elObj.childrenWarp.add(childElObj.main);
@@ -763,37 +760,6 @@ button("提示")
 				textEl.clear().add(t);
 			}
 		}
-	})
-	.addInto(toolsEl2);
-
-button("暴力分析")
-	.on("click", async () => {
-		const data = timeLine.data[0]?.dataList;
-		if (!data) return;
-		const r = await v(data);
-		console.log(r);
-		const nTimeLine: typeof timeLine = {
-			data: {},
-			link: {},
-			pointer: "0",
-		};
-		for (const [id, node] of r.nodes.entries()) {
-			nTimeLine.data[id] = {
-				dataList: creatBoardItemFromValue(node.board),
-				focusIndex: -1,
-				state: node.isConflict
-					? "error"
-					: node.isSolution
-						? "success"
-						: undefined,
-			};
-			nTimeLine.link[id] = node.children.map((i) => String(i));
-		}
-		timeLine.data = nTimeLine.data;
-		timeLine.link = nTimeLine.link;
-		timeLine.pointer = "0";
-		reRenderTimeLine(nTimeLine);
-		textEl.clear().add(`评分 ${r.nodes.size / 10}`);
 	})
 	.addInto(toolsEl2);
 
